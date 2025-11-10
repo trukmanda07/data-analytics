@@ -1,0 +1,43 @@
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# dbt
+dbt/olist_dw_dbt/target/
+dbt/olist_dw_dbt/dbt_packages/
+dbt/olist_dw_dbt/logs/
+
+# Data files (large datasets)
+data/
+
+# System files
+.DS_Store
+Thumbs.db
+sys

@@ -1,0 +1,146 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Staging model for orders with cleaned timestamps and calculated delivery metrics"
+    columns:
+      - name: order_id
+        description: "Unique order identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "Foreign key to customers"
+        tests:
+          - not_null
+      - name: order_status
+        description: "Current order status"
+        tests:
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'unavailable', 'invoiced', 'processing', 'created', 'approved']
+      - name: order_purchase_timestamp
+        description: "Timestamp when order was placed"
+        tests:
+          - not_null
+      - name: delivery_performance
+        description: "Delivery performance vs estimated date (early/on_time/late)"
+
+  - name: stg_customers
+    description: "Staging model for customer information and location"
+    columns:
+      - name: customer_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: customer_unique_id
+        description: "Unique identifier for the actual person"
+      - name: customer_state_clean
+        description: "Standardized state abbreviation"
+
+  - name: stg_order_items
+    description: "Staging model for order line items with pricing"
+    columns:
+      - name: order_id
+        description: "Foreign key to orders"
+        tests:
+          - not_null
+      - name: order_item_id
+        description: "Sequential item number within order"
+        tests:
+          - not_null
+      - name: product_id
+        description: "Foreign key to products"
+      - name: seller_id
+        description: "Foreign key to sellers"
+      - name: price
+        description: "Item price"
+        tests:
+          - not_null
+      - name: freight_value
+        description: "Freight cost"
+      - name: total_item_value
+        description: "Price + freight"
+
+  - name: stg_payments
+    description: "Staging model for payment information"
+    columns:
+      - name: order_id
+        description: "Foreign key to orders"
+        tests:
+          - not_null
+      - name: payment_type
+        description: "Payment method used"
+      - name: payment_value
+        description: "Payment amount"
+        tests:
+          - not_null
+
+  - name: stg_reviews
+    description: "Staging model for customer reviews"
+    columns:
+      - name: review_id
+        description: "Unique review identifier"
+        tests:
+          - not_null
+          - unique
+      - name: order_id
+        description: "Foreign key to orders"
+      - name: review_score
+        description: "Rating from 1 to 5"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+      - name: review_sentiment
+        description: "Derived sentiment (positive/neutral/negative)"
+
+  - name: stg_products
+    description: "Staging model for product catalog"
+    columns:
+      - name: product_id
+        description: "Unique product identifier"
+        tests:
+          - not_null
+          - unique
+      - name: product_category_name
+        description: "Product category in Portuguese"
+      - name: product_volume_cm3
+        description: "Calculated product volume"
+
+  - name: stg_sellers
+    description: "Staging model for seller information"
+    columns:
+      - name: seller_id
+        description: "Unique seller identifier"
+        tests:
+          - not_null
+          - unique
+      - name: seller_state_clean
+        description: "Standardized state abbreviation"
+
+  - name: stg_geolocation
+    description: "Staging model for Brazilian zip code coordinates (deduplicated)"
+    columns:
+      - name: geolocation_zip_code_prefix
+        description: "First 5 digits of zip code"
+        tests:
+          - not_null
+          - unique
+      - name: geolocation_lat
+        description: "Average latitude for this zip"
+      - name: geolocation_lng
+        description: "Average longitude for this zip"
+
+  - name: stg_category_translation
+    description: "Staging model for category translations"
+    columns:
+      - name: product_category_name
+        description: "Category name in Portuguese"
+        tests:
+          - not_null
+          - unique
+      - name: product_category_name_english
+        description: "Category name in English"
+      - name: category_display_name
+        description: "Title-cased English category name"

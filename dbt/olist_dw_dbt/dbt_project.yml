@@ -1,0 +1,104 @@
+# Olist Data Warehouse - Option B (dbt-Only Architecture)
+# dbt Project Configuration
+
+name: 'olist_dw_dbt'
+version: '1.0.0'
+config-version: 2
+
+# Profile configuration
+profile: 'olist_dw_dbt'
+
+# Directory paths
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Variables
+vars:
+  # CSV source path - UPDATE THIS to your actual path
+  csv_source_path: '/media/dhafin/42a9538d-5eb4-4681-ad99-92d4f59d5f9a/dhafin/datasets/Kaggle/Olist'
+
+  # Date ranges for analysis
+  start_date: '2016-01-01'
+  end_date: '2018-12-31'
+
+# Model configurations
+models:
+  olist_dw_dbt:
+    # Staging models - views for quick iteration
+    staging:
+      +materialized: view
+      +schema: staging
+      +tags: ['staging']
+      +docs:
+        node_color: '#B0E0E6'  # Light blue
+
+    # Intermediate models - ephemeral (CTEs)
+    intermediate:
+      +materialized: ephemeral
+      +tags: ['intermediate']
+
+    # Core models - tables for performance
+    core:
+      +materialized: table
+      +schema: core
+      +tags: ['core']
+      +docs:
+        node_color: '#90EE90'  # Light green
+
+      # Dimensions
+      dimensions:
+        +tags: ['dimension', 'core']
+        +post-hook:
+          - "{{ log('Dimension table built: ' ~ this, info=True) }}"
+
+      # Facts
+      facts:
+        +tags: ['fact', 'core']
+        +post-hook:
+          - "{{ log('Fact table built: ' ~ this, info=True) }}"
+
+    # Mart models - pre-aggregated for dashboards
+    marts:
+      +materialized: table
+      +schema: mart
+      +tags: ['mart']
+      +docs:
+        node_color: '#FFB6C1'  # Light pink
+
+      executive:
+        +tags: ['mart', 'executive', 'daily']
+
+      customer:
+        +tags: ['mart', 'customer', 'daily']
+
+      product:
+        +tags: ['mart', 'product', 'daily']
+
+      seller:
+        +tags: ['mart', 'seller', 'daily']
+
+      operations:
+        +tags: ['mart', 'operations', 'daily']
+
+      geographic:
+        +tags: ['mart', 'geographic', 'weekly']
+
+# Seeds configuration
+seeds:
+  olist_dw_dbt:
+    +schema: seed
+    +tags: ['seed']
+
+# Tests configuration
+tests:
+  olist_dw_dbt:
+    +store_failures: true
+    +schema: test_failures

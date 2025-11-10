@@ -1,0 +1,189 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw CSV files from Olist Brazilian E-Commerce dataset"
+    database: olist_analytical
+
+    tables:
+      - name: orders
+        description: "Order details with status and timestamps"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_orders_dataset.csv')"
+        columns:
+          - name: order_id
+            description: "Unique identifier for the order"
+            tests:
+              - not_null
+              - unique
+          - name: customer_id
+            description: "Foreign key to customers table"
+            tests:
+              - not_null
+          - name: order_status
+            description: "Order status (delivered, shipped, canceled, etc.)"
+          - name: order_purchase_timestamp
+            description: "Timestamp when the order was placed"
+          - name: order_approved_at
+            description: "Timestamp when the order payment was approved"
+          - name: order_delivered_carrier_date
+            description: "Timestamp when order was handed to carrier"
+          - name: order_delivered_customer_date
+            description: "Timestamp when order was delivered to customer"
+          - name: order_estimated_delivery_date
+            description: "Estimated delivery date shown to customer"
+
+      - name: customers
+        description: "Customer information and location"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_customers_dataset.csv')"
+        columns:
+          - name: customer_id
+            description: "Unique identifier for the customer"
+            tests:
+              - not_null
+              - unique
+          - name: customer_unique_id
+            description: "Unique identifier for the actual person (can have multiple customer_ids)"
+          - name: customer_zip_code_prefix
+            description: "First 5 digits of customer zip code"
+          - name: customer_city
+            description: "Customer city name"
+          - name: customer_state
+            description: "Customer state abbreviation"
+
+      - name: order_items
+        description: "Line items for each order with product and pricing details"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_items_dataset.csv')"
+        columns:
+          - name: order_id
+            description: "Foreign key to orders table"
+            tests:
+              - not_null
+          - name: order_item_id
+            description: "Sequential number identifying the item within the order"
+          - name: product_id
+            description: "Foreign key to products table"
+          - name: seller_id
+            description: "Foreign key to sellers table"
+          - name: shipping_limit_date
+            description: "Seller shipping limit date"
+          - name: price
+            description: "Item price"
+          - name: freight_value
+            description: "Freight cost for this item"
+
+      - name: payments
+        description: "Payment details including method and installments"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_payments_dataset.csv')"
+        columns:
+          - name: order_id
+            description: "Foreign key to orders table"
+            tests:
+              - not_null
+          - name: payment_sequential
+            description: "Sequential number for multiple payment methods"
+          - name: payment_type
+            description: "Payment method (credit_card, boleto, voucher, debit_card)"
+          - name: payment_installments
+            description: "Number of installments"
+          - name: payment_value
+            description: "Payment amount"
+
+      - name: reviews
+        description: "Customer reviews with scores and comments"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_reviews_dataset.csv')"
+        columns:
+          - name: review_id
+            description: "Unique review identifier"
+            tests:
+              - not_null
+              - unique
+          - name: order_id
+            description: "Foreign key to orders table"
+          - name: review_score
+            description: "Rating from 1 to 5"
+          - name: review_comment_title
+            description: "Review title"
+          - name: review_comment_message
+            description: "Review message text"
+          - name: review_creation_date
+            description: "Date review was created"
+          - name: review_answer_timestamp
+            description: "Date review was answered"
+
+      - name: products
+        description: "Product catalog with categories and dimensions"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_products_dataset.csv')"
+        columns:
+          - name: product_id
+            description: "Unique product identifier"
+            tests:
+              - not_null
+              - unique
+          - name: product_category_name
+            description: "Product category name in Portuguese"
+          - name: product_name_lenght
+            description: "Length of product name"
+          - name: product_description_lenght
+            description: "Length of product description"
+          - name: product_photos_qty
+            description: "Number of product photos"
+          - name: product_weight_g
+            description: "Product weight in grams"
+          - name: product_length_cm
+            description: "Product length in cm"
+          - name: product_height_cm
+            description: "Product height in cm"
+          - name: product_width_cm
+            description: "Product width in cm"
+
+      - name: sellers
+        description: "Seller information and location"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_sellers_dataset.csv')"
+        columns:
+          - name: seller_id
+            description: "Unique seller identifier"
+            tests:
+              - not_null
+              - unique
+          - name: seller_zip_code_prefix
+            description: "First 5 digits of seller zip code"
+          - name: seller_city
+            description: "Seller city name"
+          - name: seller_state
+            description: "Seller state abbreviation"
+
+      - name: geolocation
+        description: "Brazilian zip code coordinates for mapping"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_geolocation_dataset.csv')"
+        columns:
+          - name: geolocation_zip_code_prefix
+            description: "First 5 digits of zip code"
+          - name: geolocation_lat
+            description: "Latitude"
+          - name: geolocation_lng
+            description: "Longitude"
+          - name: geolocation_city
+            description: "City name"
+          - name: geolocation_state
+            description: "State abbreviation"
+
+      - name: category_translation
+        description: "Product category names translated from Portuguese to English"
+        meta:
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/product_category_name_translation.csv')"
+        columns:
+          - name: product_category_name
+            description: "Category name in Portuguese"
+            tests:
+              - not_null
+              - unique
+          - name: product_category_name_english
+            description: "Category name in English"
