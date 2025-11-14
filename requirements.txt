@@ -5,6 +5,12 @@ dbt-core==1.7.0
 dbt-duckdb==1.7.0
 dbt-duckdb[sources]==1.7.0
 
+# Fix protobuf compatibility with dbt 1.7.0
+protobuf>=3.20,<5.0
+
+# dbt Column Lineage
+dbt-colibri>=0.2.7
+
 # Development tools
 pytest==7.4.3
 black==23.12.0

@@ -24,11 +24,30 @@ marimo edit marimo_notebooks/olist/executive_dashboard.py
 # 1. Navigate to dbt project
 cd dbt/olist_dw_dbt
 
-# 2. Build the data warehouse
+# 2. Install dependencies
+dbt deps
+
+# 3. Build the data warehouse
 dbt build
 
-# 3. View documentation
+# 4. View documentation
 dbt docs generate && dbt docs serve
+```
+
+### Option 3: Column Lineage (dbt-colibri)
+```bash
+# 1. Navigate to dbt project
+cd dbt/olist_dw_dbt
+
+# 2. Generate dbt artifacts
+dbt compile && dbt docs generate
+
+# 3. Generate column lineage report
+colibri generate
+
+# 4. View lineage dashboard
+xdg-open dist/index.html  # Linux
+# or open dist/index.html  # macOS
 ```
 
 ## 📁 Project Structure
@@ -330,6 +349,27 @@ ORDER BY review_score DESC
 - Use **Marimo** to query dbt models for interactive analysis
 - Example: `SELECT * FROM mart.mart_executive_dashboard`
 
+### dbt-colibri (Column Lineage)
+**Best for:**
+- Understanding data flow at column level
+- Impact analysis before making changes
+- Data quality investigations
+- Documentation and onboarding
+
+**Pros:**
+- Visual column-level lineage tracking
+- Fast generation from existing dbt artifacts
+- Self-hosted with no external dependencies
+- Interactive HTML dashboard
+
+**When to use:**
+- Trace how specific columns flow through transformations
+- Identify downstream impacts of schema changes
+- Debug data quality issues
+- Document complex data flows
+
+**Learn more:** See `/docs/dbt_colibri_integration.md` for detailed usage guide
+
 ## 🔧 Configuration
 
 ### Marimo Setup
@@ -348,6 +388,7 @@ Edit `dbt/olist_dw_dbt/dbt_project.yml`:
 
 - **Marimo:** https://docs.marimo.io
 - **dbt:** https://docs.getdbt.com
+- **dbt-colibri:** https://github.com/b-ned/dbt-colibri
 - **DuckDB:** https://duckdb.org/docs/
 - **Plotly:** https://plotly.com/python/
 
@@ -425,10 +466,18 @@ dbt build --select staging
 - Combine both: dbt for transformations, marimo for exploration
 - Schedule dbt runs and refresh marimo dashboards
 
+### For Column Lineage Analysis:
+1. Navigate to dbt project: `cd dbt/olist_dw_dbt`
+2. Generate artifacts: `dbt compile && dbt docs generate`
+3. Run Colibri: `colibri generate`
+4. Open dashboard: `xdg-open dist/index.html`
+5. Explore column-level data flow
+6. See `/docs/dbt_colibri_integration.md` for detailed guide
+
 ---
 
 **Happy Analyzing!** 🚀
 
-**Project Structure:** 11 marimo notebooks + complete dbt data warehouse
+**Project Structure:** 11 marimo notebooks + complete dbt data warehouse + column lineage
 **Dataset:** 100k orders, 32k products, 3k sellers (2016-2018)
-**Tools:** Marimo + dbt + DuckDB + Plotly
+**Tools:** Marimo + dbt + dbt-colibri + DuckDB + Plotly
