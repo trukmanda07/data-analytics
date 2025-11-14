@@ -1,11 +1,11 @@
 import marimo
 
-__generated_with = "0.9.0"
-app = marimo.App(width="medium")
+__generated_with = "0.17.7"
+app = marimo.App(width="medium", auto_download=["html"])
 
 
 @app.cell
-def __():
+def _():
     import marimo as mo
     import duckdb
     import pandas as pd
@@ -16,11 +16,11 @@ def __():
     from pathlib import Path
     from dotenv import load_dotenv
     import numpy as np
-    return mo, duckdb, pd, px, go, make_subplots, os, Path, load_dotenv, np
+    return Path, duckdb, go, load_dotenv, make_subplots, mo, np, os, pd, px
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     # Customer Retention & Cohort Analysis - Olist E-Commerce
 
@@ -40,7 +40,7 @@ def __(mo):
 
 
 @app.cell
-def __(duckdb, load_dotenv, os, Path):
+def _(Path, duckdb, load_dotenv, os):
     # Load environment variables from .env file
     env_path = Path(__file__).parent.parent.parent / '.env'
     load_dotenv(env_path)
@@ -52,12 +52,11 @@ def __(duckdb, load_dotenv, os, Path):
 
     # Connect to DuckDB analytical database
     con = duckdb.connect(database=db_path, read_only=True)
-
-    return con, db_path, db_name, env_path
+    return (con,)
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ## Date Range Filter
 
@@ -67,7 +66,7 @@ def __(mo):
 
 
 @app.cell
-def __(mo):
+def _(mo):
     date_range = mo.ui.date_range(
         start="2016-09-01",
         stop="2018-08-31",
@@ -79,7 +78,7 @@ def __(mo):
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Customer Retention KPIs
@@ -90,7 +89,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Calculate retention KPIs
     retention_kpi_query = f"""
     WITH customer_orders AS (
@@ -115,11 +114,11 @@ def __(con, date_range):
     """
 
     retention_kpis = con.execute(retention_kpi_query).df()
-    return retention_kpi_query, retention_kpis
+    return (retention_kpis,)
 
 
 @app.cell
-def __(mo, retention_kpis):
+def _(mo, retention_kpis):
     # Display retention KPI cards
     mo.hstack([
         mo.vstack([
@@ -158,7 +157,7 @@ def __(mo, retention_kpis):
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Customer Segmentation
@@ -171,7 +170,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Customer segmentation analysis
     segment_query = f"""
     WITH customer_orders AS (
@@ -216,12 +215,11 @@ def __(con, date_range):
     # Calculate percentages
     segments['customer_pct'] = segments['customer_count'] / segments['customer_count'].sum() * 100
     segments['revenue_pct'] = segments['total_revenue'] / segments['total_revenue'].sum() * 100
-
-    return segment_query, segments
+    return (segments,)
 
 
 @app.cell
-def __(make_subplots, go, segments):
+def _(go, make_subplots, segments):
     # Customer and revenue distribution
     fig_segments = make_subplots(
         rows=1, cols=2,
@@ -262,11 +260,11 @@ def __(make_subplots, go, segments):
     )
 
     fig_segments
-    return (fig_segments,)
+    return
 
 
 @app.cell
-def __(px, segments):
+def _(px, segments):
     # LTV by segment
     fig_ltv = px.bar(
         segments,
@@ -282,11 +280,11 @@ def __(px, segments):
     fig_ltv.update_traces(texttemplate='R$ %{text:.2f}', textposition='outside')
     fig_ltv.update_layout(showlegend=False)
     fig_ltv
-    return (fig_ltv,)
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Time to Second Purchase
@@ -297,7 +295,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Time between first and second purchase
     time_to_second_query = f"""
     WITH customer_orders AS (
@@ -326,11 +324,11 @@ def __(con, date_range):
     """
 
     time_to_second = con.execute(time_to_second_query).df()
-    return time_to_second, time_to_second_query
+    return (time_to_second,)
 
 
 @app.cell
-def __(time_to_second, np):
+def _(np, pd, time_to_second):
     # Calculate statistics
     avg_days = time_to_second['days_to_second_purchase'].mean()
     median_days = time_to_second['days_to_second_purchase'].median()
@@ -343,12 +341,11 @@ def __(time_to_second, np):
     )
 
     time_distribution = time_to_second.groupby('days_bucket', observed=True).size().reset_index(name='customer_count')
-
     return avg_days, median_days, time_distribution
 
 
 @app.cell
-def __(mo, avg_days, median_days):
+def _(avg_days, median_days, mo):
     mo.md(f"""
     **Average time to 2nd purchase:** {avg_days:.1f} days
 
@@ -358,7 +355,7 @@ def __(mo, avg_days, median_days):
 
 
 @app.cell
-def __(px, time_distribution):
+def _(px, time_distribution):
     # Distribution of time to second purchase
     fig_time_second = px.bar(
         time_distribution,
@@ -374,11 +371,11 @@ def __(px, time_distribution):
     fig_time_second.update_traces(textposition='outside')
     fig_time_second.update_layout(showlegend=False)
     fig_time_second
-    return (fig_time_second,)
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Monthly Cohort Retention Analysis
@@ -389,7 +386,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Cohort retention analysis
     cohort_query = f"""
     WITH customer_cohorts AS (
@@ -423,11 +420,11 @@ def __(con, date_range):
     """
 
     cohort_data = con.execute(cohort_query).df()
-    return cohort_data, cohort_query
+    return (cohort_data,)
 
 
 @app.cell
-def __(cohort_data, pd):
+def _(cohort_data):
     # Create cohort retention matrix
     cohort_pivot = cohort_data.pivot(
         index='cohort_month',
@@ -438,12 +435,11 @@ def __(cohort_data, pd):
     # Calculate retention percentages
     cohort_sizes = cohort_pivot[0]
     cohort_retention = cohort_pivot.divide(cohort_sizes, axis=0) * 100
-
-    return cohort_pivot, cohort_retention, cohort_sizes
+    return (cohort_retention,)
 
 
 @app.cell
-def __(px, cohort_retention):
+def _(cohort_retention, px):
     # Cohort retention heatmap
     fig_cohort = px.imshow(
         cohort_retention,
@@ -457,20 +453,19 @@ def __(px, cohort_retention):
 
     fig_cohort.update_layout(height=600)
     fig_cohort
-    return (fig_cohort,)
+    return
 
 
 @app.cell
-def __(cohort_retention):
+def _(cohort_retention):
     # Average retention curve across all cohorts
     avg_retention_curve = cohort_retention.mean(axis=0).reset_index()
     avg_retention_curve.columns = ['months_since_first', 'avg_retention_pct']
-
     return (avg_retention_curve,)
 
 
 @app.cell
-def __(px, avg_retention_curve):
+def _(avg_retention_curve, px):
     # Average retention curve
     fig_retention_curve = px.line(
         avg_retention_curve,
@@ -487,11 +482,11 @@ def __(px, avg_retention_curve):
     )
 
     fig_retention_curve
-    return (fig_retention_curve,)
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Monthly Churn Analysis
@@ -502,7 +497,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Monthly churn analysis
     churn_query = f"""
     WITH monthly_active_customers AS (
@@ -537,11 +532,11 @@ def __(con, date_range):
     """
 
     churn_data = con.execute(churn_query).df()
-    return churn_data, churn_query
+    return (churn_data,)
 
 
 @app.cell
-def __(make_subplots, go, churn_data):
+def _(churn_data, go, make_subplots):
     # Churn rate visualization
     fig_churn = make_subplots(
         rows=2, cols=1,
@@ -586,11 +581,11 @@ def __(make_subplots, go, churn_data):
     )
 
     fig_churn
-    return (fig_churn,)
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Review Writers vs Non-Review Writers
@@ -601,7 +596,7 @@ def __(mo):
 
 
 @app.cell
-def __(con, date_range):
+def _(con, date_range):
     # Compare review writers vs non-writers
     review_comparison_query = f"""
     WITH customer_review_behavior AS (
@@ -634,18 +629,18 @@ def __(con, date_range):
     """
 
     review_comparison = con.execute(review_comparison_query).df()
-    return review_comparison, review_comparison_query
+    return (review_comparison,)
 
 
 @app.cell
-def __(review_comparison):
+def _(review_comparison):
     # Display comparison table
     review_comparison
     return
 
 
 @app.cell
-def __(make_subplots, go, review_comparison):
+def _(go, make_subplots, review_comparison):
     # Comparison visualization
     fig_review_comp = make_subplots(
         rows=2, cols=2,
@@ -718,11 +713,11 @@ def __(make_subplots, go, review_comparison):
     )
 
     fig_review_comp
-    return colors, fig_review_comp
+    return
 
 
 @app.cell
-def __(mo):
+def _(mo):
     mo.md("""
     ---
     ## Key Insights Summary
