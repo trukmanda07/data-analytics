@@ -1,0 +1,385 @@
+version: 2
+
+models:
+  - name: fct_order_items
+    description: "Order items fact table - grain: one row per order item"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "total_item_value = item_price + freight_value"
+          name: fct_order_items_total_value_equals_price_plus_freight
+
+    columns:
+      - name: order_id
+        description: "Foreign key to orders"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: order_item_id
+        description: "Item sequence within order"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              inclusive: true
+
+      - name: product_id
+        description: "Foreign key to products"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_products')
+              field: product_id
+
+      - name: seller_id
+        description: "Foreign key to sellers"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_sellers')
+              field: seller_id
+
+      - name: customer_id
+        description: "Foreign key to customers"
+        tests:
+          - not_null
+
+      - name: order_date_key
+        description: "Foreign key to date dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: item_price
+        description: "Item price in BRL"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: freight_value
+        description: "Freight cost in BRL"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: total_item_value
+        description: "Total value (price + freight)"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: product_category_name_english
+        description: "Denormalized category name"
+
+      - name: order_status
+        description: "Order status"
+        tests:
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'unavailable', 'invoiced', 'processing', 'created', 'approved']
+
+      - name: order_purchase_timestamp
+        description: "Order purchase timestamp"
+        tests:
+          - not_null
+
+      - name: freight_percentage
+        description: "Freight as percentage of item price"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000
+              inclusive: true
+              where: "freight_percentage IS NOT NULL"
+
+      - name: price_tier
+        description: "Price range tier"
+        tests:
+          - accepted_values:
+              values: ['Premium', 'High', 'Medium', 'Low', 'Budget']
+
+      - name: volume_tier
+        description: "Product volume tier"
+        tests:
+          - accepted_values:
+              values: ['Extra Small', 'Small', 'Medium', 'Large', 'Extra Large', 'Unknown']
+
+      - name: is_same_state
+        description: "Customer and seller in same state"
+        tests:
+          - not_null
+
+      - name: is_delivered
+        description: "Order delivery status flag"
+        tests:
+          - not_null
+
+      - name: is_on_time_delivery
+        description: "Delivered on or before estimated date"
+
+      - name: days_to_deliver
+        description: "Days from purchase to delivery"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 365
+              inclusive: true
+              where: "days_to_deliver IS NOT NULL"
+
+  - name: fct_payments
+    description: "Payments fact table - grain: one row per payment"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "installment_value = payment_value / NULLIF(payment_installments, 0)"
+          name: fct_payments_installment_value_calculation
+
+    columns:
+      - name: order_id
+        description: "Foreign key to orders"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: payment_sequential
+        description: "Sequential payment number for order"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 1
+              inclusive: true
+
+      - name: customer_id
+        description: "Foreign key to customers"
+        tests:
+          - not_null
+
+      - name: order_date_key
+        description: "Foreign key to date dimension"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: payment_type
+        description: "Payment method code"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+
+      - name: payment_type_display
+        description: "Human-readable payment method"
+        tests:
+          - not_null
+
+      - name: payment_installments
+        description: "Number of installments"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 24
+              inclusive: true
+
+      - name: payment_value
+        description: "Payment amount in BRL"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: order_status
+        description: "Order status at time of payment"
+        tests:
+          - accepted_values:
+              values: ['delivered', 'shipped', 'canceled', 'unavailable', 'invoiced', 'processing', 'created', 'approved']
+
+      - name: is_credit_card
+        description: "Payment is credit card"
+        tests:
+          - not_null
+
+      - name: is_boleto
+        description: "Payment is boleto"
+        tests:
+          - not_null
+
+      - name: uses_installments
+        description: "Payment uses installments"
+        tests:
+          - not_null
+
+      - name: installment_category
+        description: "Installment period category"
+        tests:
+          - accepted_values:
+              values: ['Full Payment', 'Short Term (2-3)', 'Medium Term (4-6)',
+                       'Long Term (7-12)', 'Extended Term (12+)', 'Unknown']
+
+      - name: payment_value_tier
+        description: "Payment value tier"
+        tests:
+          - accepted_values:
+              values: ['Very High', 'High', 'Medium', 'Low', 'Very Low']
+
+      - name: installment_value
+        description: "Value per installment"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: is_primary_payment
+        description: "First payment for this order"
+        tests:
+          - not_null
+
+  - name: fct_reviews
+    description: "Reviews fact table - grain: one row per review"
+    columns:
+      - name: review_id
+        description: "Primary key - unique review identifier"
+        tests:
+          - not_null
+          - unique
+
+      - name: order_id
+        description: "Foreign key to orders"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
+
+      - name: customer_id
+        description: "Foreign key to customers"
+        tests:
+          - not_null
+
+      - name: review_date_key
+        description: "Foreign key to date dimension (review date)"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: order_date_key
+        description: "Foreign key to date dimension (order date)"
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_key
+
+      - name: review_score
+        description: "Rating from 1 to 5"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+      - name: review_creation_date
+        description: "When review was created"
+        tests:
+          - not_null
+
+      - name: review_sentiment
+        description: "Derived sentiment"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['positive', 'neutral', 'negative']
+
+      - name: has_comment
+        description: "Review has text comment"
+        tests:
+          - not_null
+
+      - name: has_answer
+        description: "Review has seller answer"
+        tests:
+          - not_null
+
+      - name: review_score_category
+        description: "Score category label"
+        tests:
+          - accepted_values:
+              values: ['Excellent', 'Good', 'Average', 'Poor', 'Very Poor', 'Unknown']
+
+      - name: is_positive
+        description: "Review is positive (score 4-5)"
+        tests:
+          - not_null
+
+      - name: is_negative
+        description: "Review is negative (score 1-2)"
+        tests:
+          - not_null
+
+      - name: order_value
+        description: "Total order value"
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              inclusive: true
+
+      - name: days_order_to_review
+        description: "Days from order to review"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 365
+              inclusive: true
+              where: "days_order_to_review IS NOT NULL"
+
+      - name: days_delivery_to_review
+        description: "Days from delivery to review"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: -30
+              max_value: 365
+              inclusive: true
+              where: "days_delivery_to_review IS NOT NULL"
+
+      - name: days_to_answer
+        description: "Days to answer review"
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 365
+              inclusive: true
+              where: "days_to_answer IS NOT NULL"
+
+      - name: review_timing
+        description: "Review timing category"
+        tests:
+          - accepted_values:
+              values: ['Immediate', 'Within Week', 'Within Month', 'After Month', 'Unknown']
+
+      - name: comment_detail_level
+        description: "Comment detail level"
+        tests:
+          - accepted_values:
+              values: ['Detailed', 'Moderate', 'Brief', 'No Comment']
+
+      - name: answer_timing
+        description: "Answer response time category"
+        tests:
+          - accepted_values:
+              values: ['No Answer', 'Same/Next Day', 'Within Week', 'Within Month', 'After Month']
