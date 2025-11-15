@@ -52,9 +52,9 @@ unique_locations AS (
     SELECT
         zip_code_prefix,
         -- Take the first city/state (should be consistent per zip)
-        MIN(city) AS city,
-        MIN(state) AS state,
-        MIN(state_clean) AS state_clean
+        min(city) AS city,
+        min(state) AS state,
+        min(state_clean) AS state_clean
     FROM all_zips
     GROUP BY zip_code_prefix
 ),
@@ -63,7 +63,7 @@ unique_locations AS (
 customer_counts AS (
     SELECT
         customer_zip_code_prefix AS zip_code_prefix,
-        COUNT(DISTINCT customer_id) AS customer_count
+        count(DISTINCT customer_id) AS customer_count
     FROM customers
     GROUP BY customer_zip_code_prefix
 ),
@@ -71,7 +71,7 @@ customer_counts AS (
 seller_counts AS (
     SELECT
         seller_zip_code_prefix AS zip_code_prefix,
-        COUNT(DISTINCT seller_id) AS seller_count
+        count(DISTINCT seller_id) AS seller_count
     FROM sellers
     GROUP BY seller_zip_code_prefix
 ),
@@ -91,16 +91,12 @@ geography_dimension AS (
         g.geolocation_lng AS longitude,
 
         -- Has coordinates flag
-        CASE
-            WHEN g.geolocation_lat IS NOT NULL AND g.geolocation_lng IS NOT NULL
-            THEN TRUE
-            ELSE FALSE
-        END AS has_coordinates,
+        coalesce(g.geolocation_lat IS NOT null AND g.geolocation_lng IS NOT null, false) AS has_coordinates,
 
         -- Counts
-        COALESCE(cc.customer_count, 0) AS customer_count,
-        COALESCE(sc.seller_count, 0) AS seller_count,
-        COALESCE(cc.customer_count, 0) + COALESCE(sc.seller_count, 0) AS total_entities,
+        coalesce(cc.customer_count, 0) AS customer_count,
+        coalesce(sc.seller_count, 0) AS seller_count,
+        coalesce(cc.customer_count, 0) + coalesce(sc.seller_count, 0) AS total_entities,
 
         -- Location type
         CASE
@@ -154,20 +150,20 @@ geography_dimension AS (
 
         -- Population tier (based on customer + seller count as proxy)
         CASE
-            WHEN COALESCE(cc.customer_count, 0) + COALESCE(sc.seller_count, 0) >= 1000 THEN 'Major City'
-            WHEN COALESCE(cc.customer_count, 0) + COALESCE(sc.seller_count, 0) >= 100 THEN 'Large City'
-            WHEN COALESCE(cc.customer_count, 0) + COALESCE(sc.seller_count, 0) >= 10 THEN 'Medium City'
-            WHEN COALESCE(cc.customer_count, 0) + COALESCE(sc.seller_count, 0) >= 1 THEN 'Small City'
+            WHEN coalesce(cc.customer_count, 0) + coalesce(sc.seller_count, 0) >= 1000 THEN 'Major City'
+            WHEN coalesce(cc.customer_count, 0) + coalesce(sc.seller_count, 0) >= 100 THEN 'Large City'
+            WHEN coalesce(cc.customer_count, 0) + coalesce(sc.seller_count, 0) >= 10 THEN 'Medium City'
+            WHEN coalesce(cc.customer_count, 0) + coalesce(sc.seller_count, 0) >= 1 THEN 'Small City'
             ELSE 'Rural'
         END AS city_size_tier,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM unique_locations ul
-    LEFT JOIN geolocation g ON ul.zip_code_prefix = g.geolocation_zip_code_prefix
-    LEFT JOIN customer_counts cc ON ul.zip_code_prefix = cc.zip_code_prefix
-    LEFT JOIN seller_counts sc ON ul.zip_code_prefix = sc.zip_code_prefix
+    FROM unique_locations AS ul
+    LEFT JOIN geolocation AS g ON ul.zip_code_prefix = g.geolocation_zip_code_prefix
+    LEFT JOIN customer_counts AS cc ON ul.zip_code_prefix = cc.zip_code_prefix
+    LEFT JOIN seller_counts AS sc ON ul.zip_code_prefix = sc.zip_code_prefix
 )
 
 SELECT * FROM geography_dimension

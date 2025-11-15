@@ -6,7 +6,7 @@
 }}
 
 WITH source AS (
-    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_order_payments_dataset.csv', header=true, auto_detect=true)
+    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_order_payments_dataset.csv', header = true, auto_detect = true)
 ),
 
 cleaned AS (
@@ -21,10 +21,10 @@ cleaned AS (
         payment_type,
 
         -- Installments
-        CAST(payment_installments AS INTEGER) AS payment_installments,
+        cast(payment_installments AS INTEGER) AS payment_installments,
 
         -- Payment amount
-        CAST(payment_value AS DECIMAL(10,2)) AS payment_value,
+        cast(payment_value AS DECIMAL(10, 2)) AS payment_value,
 
         -- Payment type categorization
         CASE
@@ -36,7 +36,7 @@ cleaned AS (
         END AS payment_type_display
 
     FROM source
-    WHERE order_id IS NOT NULL
+    WHERE order_id IS NOT null
 )
 
 SELECT * FROM cleaned

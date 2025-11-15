@@ -415,3 +415,18 @@ models:
         tests:
           - accepted_values:
               values: ['Large Seller', 'Medium Seller', 'Small Seller', 'Micro Seller', 'No Sales']
+
+  - name: dim_customers
+    description: "Customer dimension with location information and purchase behavior metrics"
+    columns:
+      - name: customer_key
+        description: "Primary key - surrogate key for customer dimension"
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: "Natural key - unique customer identifier"
+        tests:
+          - not_null
+          - unique

@@ -6,7 +6,7 @@
 }}
 
 WITH source AS (
-    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_sellers_dataset.csv', header=true, auto_detect=true)
+    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_sellers_dataset.csv', header = true, auto_detect = true)
 ),
 
 cleaned AS (
@@ -20,10 +20,10 @@ cleaned AS (
         seller_state,
 
         -- Standardize state abbreviation (uppercase, trim)
-        UPPER(TRIM(seller_state)) AS seller_state_clean
+        upper(trim(seller_state)) AS seller_state_clean
 
     FROM source
-    WHERE seller_id IS NOT NULL
+    WHERE seller_id IS NOT null
 )
 
 SELECT * FROM cleaned

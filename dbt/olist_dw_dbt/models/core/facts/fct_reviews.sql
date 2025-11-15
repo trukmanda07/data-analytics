@@ -21,8 +21,8 @@ customers AS (
 order_items AS (
     SELECT
         order_id,
-        COUNT(*) AS item_count,
-        SUM(price) AS total_order_value
+        count(*) AS item_count,
+        sum(price) AS total_order_value
     FROM {{ ref('stg_order_items') }}
     GROUP BY order_id
 ),
@@ -37,8 +37,8 @@ reviews_fact AS (
         o.customer_id,
 
         -- Date foreign keys
-        CAST(STRFTIME(r.review_creation_date, '%Y%m%d') AS INTEGER) AS review_date_key,
-        CAST(STRFTIME(o.order_purchase_timestamp, '%Y%m%d') AS INTEGER) AS order_date_key,
+        cast(strftime(r.review_creation_date, '%Y%m%d') AS INTEGER) AS review_date_key,
+        cast(strftime(o.order_purchase_timestamp, '%Y%m%d') AS INTEGER) AS order_date_key,
 
         -- Review attributes
         r.review_score,
@@ -63,9 +63,9 @@ reviews_fact AS (
         END AS review_score_category,
 
         -- Sentiment flags
-        CASE WHEN r.review_sentiment = 'positive' THEN TRUE ELSE FALSE END AS is_positive,
-        CASE WHEN r.review_sentiment = 'neutral' THEN TRUE ELSE FALSE END AS is_neutral,
-        CASE WHEN r.review_sentiment = 'negative' THEN TRUE ELSE FALSE END AS is_negative,
+        coalesce(r.review_sentiment = 'positive', false) AS is_positive,
+        coalesce(r.review_sentiment = 'neutral', false) AS is_neutral,
+        coalesce(r.review_sentiment = 'negative', false) AS is_negative,
 
         -- Order context
         o.order_status,
@@ -78,89 +78,90 @@ reviews_fact AS (
         c.customer_state,
 
         -- Order value context
-        COALESCE(oi.total_order_value, 0) AS order_value,
-        COALESCE(oi.item_count, 0) AS order_item_count,
+        coalesce(oi.total_order_value, 0) AS order_value,
+        coalesce(oi.item_count, 0) AS order_item_count,
 
         -- Time metrics
         -- Days from order to review
         CASE
-            WHEN r.review_creation_date IS NOT NULL
-                AND o.order_purchase_timestamp IS NOT NULL
-            THEN DATE_DIFF('day', o.order_purchase_timestamp, r.review_creation_date)
-            ELSE NULL
+            WHEN
+                r.review_creation_date IS NOT null
+                AND o.order_purchase_timestamp IS NOT null
+                THEN date_diff('day', o.order_purchase_timestamp, r.review_creation_date)
         END AS days_order_to_review,
 
         -- Days from delivery to review
         CASE
-            WHEN r.review_creation_date IS NOT NULL
-                AND o.order_delivered_customer_date IS NOT NULL
-            THEN DATE_DIFF('day', o.order_delivered_customer_date, r.review_creation_date)
-            ELSE NULL
+            WHEN
+                r.review_creation_date IS NOT null
+                AND o.order_delivered_customer_date IS NOT null
+                THEN date_diff('day', o.order_delivered_customer_date, r.review_creation_date)
         END AS days_delivery_to_review,
 
         -- Days to answer review
         CASE
-            WHEN r.review_answer_timestamp IS NOT NULL
-                AND r.review_creation_date IS NOT NULL
-            THEN DATE_DIFF('day', r.review_creation_date, r.review_answer_timestamp)
-            ELSE NULL
+            WHEN
+                r.review_answer_timestamp IS NOT null
+                AND r.review_creation_date IS NOT null
+                THEN date_diff('day', r.review_creation_date, r.review_answer_timestamp)
         END AS days_to_answer,
 
         -- Review timing category
         CASE
-            WHEN r.review_creation_date IS NOT NULL
-                AND o.order_delivered_customer_date IS NOT NULL
-            THEN
-                CASE
-                    WHEN DATE_DIFF('day', o.order_delivered_customer_date, r.review_creation_date) <= 1 THEN 'Immediate'
-                    WHEN DATE_DIFF('day', o.order_delivered_customer_date, r.review_creation_date) <= 7 THEN 'Within Week'
-                    WHEN DATE_DIFF('day', o.order_delivered_customer_date, r.review_creation_date) <= 30 THEN 'Within Month'
-                    ELSE 'After Month'
-                END
+            WHEN
+                r.review_creation_date IS NOT null
+                AND o.order_delivered_customer_date IS NOT null
+                THEN
+                    CASE
+                        WHEN date_diff('day', o.order_delivered_customer_date, r.review_creation_date) <= 1 THEN 'Immediate'
+                        WHEN date_diff('day', o.order_delivered_customer_date, r.review_creation_date) <= 7 THEN 'Within Week'
+                        WHEN date_diff('day', o.order_delivered_customer_date, r.review_creation_date) <= 30 THEN 'Within Month'
+                        ELSE 'After Month'
+                    END
             ELSE 'Unknown'
         END AS review_timing,
 
         -- Comment length metrics
         CASE
-            WHEN r.review_comment_title IS NOT NULL
-            THEN LENGTH(r.review_comment_title)
+            WHEN r.review_comment_title IS NOT null
+                THEN length(r.review_comment_title)
             ELSE 0
         END AS title_length,
 
         CASE
-            WHEN r.review_comment_message IS NOT NULL
-            THEN LENGTH(r.review_comment_message)
+            WHEN r.review_comment_message IS NOT null
+                THEN length(r.review_comment_message)
             ELSE 0
         END AS message_length,
 
         -- Comment detail level
         CASE
-            WHEN r.review_comment_message IS NOT NULL AND LENGTH(r.review_comment_message) > 200 THEN 'Detailed'
-            WHEN r.review_comment_message IS NOT NULL AND LENGTH(r.review_comment_message) > 50 THEN 'Moderate'
-            WHEN r.review_comment_message IS NOT NULL THEN 'Brief'
+            WHEN r.review_comment_message IS NOT null AND length(r.review_comment_message) > 200 THEN 'Detailed'
+            WHEN r.review_comment_message IS NOT null AND length(r.review_comment_message) > 50 THEN 'Moderate'
+            WHEN r.review_comment_message IS NOT null THEN 'Brief'
             ELSE 'No Comment'
         END AS comment_detail_level,
 
         -- Answer response time category
         CASE
-            WHEN r.review_answer_timestamp IS NULL THEN 'No Answer'
-            WHEN DATE_DIFF('day', r.review_creation_date, r.review_answer_timestamp) <= 1 THEN 'Same/Next Day'
-            WHEN DATE_DIFF('day', r.review_creation_date, r.review_answer_timestamp) <= 7 THEN 'Within Week'
-            WHEN DATE_DIFF('day', r.review_creation_date, r.review_answer_timestamp) <= 30 THEN 'Within Month'
+            WHEN r.review_answer_timestamp IS null THEN 'No Answer'
+            WHEN date_diff('day', r.review_creation_date, r.review_answer_timestamp) <= 1 THEN 'Same/Next Day'
+            WHEN date_diff('day', r.review_creation_date, r.review_answer_timestamp) <= 7 THEN 'Within Week'
+            WHEN date_diff('day', r.review_creation_date, r.review_answer_timestamp) <= 30 THEN 'Within Month'
             ELSE 'After Month'
         END AS answer_timing,
 
         -- Order status flags
-        CASE WHEN o.order_status = 'delivered' THEN TRUE ELSE FALSE END AS is_delivered,
-        CASE WHEN o.order_status = 'canceled' THEN TRUE ELSE FALSE END AS is_canceled,
+        coalesce(o.order_status = 'delivered', false) AS is_delivered,
+        coalesce(o.order_status = 'canceled', false) AS is_canceled,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM reviews r
-    LEFT JOIN orders o ON r.order_id = o.order_id
-    LEFT JOIN customers c ON o.customer_id = c.customer_id
-    LEFT JOIN order_items oi ON r.order_id = oi.order_id
+    FROM reviews AS r
+    LEFT JOIN orders AS o ON r.order_id = o.order_id
+    LEFT JOIN customers AS c ON o.customer_id = c.customer_id
+    LEFT JOIN order_items AS oi ON r.order_id = oi.order_id
 )
 
 SELECT * FROM reviews_fact

@@ -30,7 +30,7 @@ order_items_fact AS (
         o.customer_id,
 
         -- Date foreign key
-        CAST(STRFTIME(o.order_purchase_timestamp, '%Y%m%d') AS INTEGER) AS order_date_key,
+        cast(strftime(o.order_purchase_timestamp, '%Y%m%d') AS INTEGER) AS order_date_key,
 
         -- Order item attributes
         oi.shipping_limit_date,
@@ -69,8 +69,7 @@ order_items_fact AS (
         -- Freight as percentage of item price
         CASE
             WHEN oi.price > 0
-            THEN (oi.freight_value / oi.price) * 100
-            ELSE NULL
+                THEN (oi.freight_value / oi.price) * 100
         END AS freight_percentage,
 
         -- Price tier
@@ -84,7 +83,7 @@ order_items_fact AS (
 
         -- Volume tier
         CASE
-            WHEN oi.product_volume_cm3 IS NULL THEN 'Unknown'
+            WHEN oi.product_volume_cm3 IS null THEN 'Unknown'
             WHEN oi.product_volume_cm3 >= 100000 THEN 'Extra Large'
             WHEN oi.product_volume_cm3 >= 50000 THEN 'Large'
             WHEN oi.product_volume_cm3 >= 10000 THEN 'Medium'
@@ -93,57 +92,51 @@ order_items_fact AS (
         END AS volume_tier,
 
         -- Same state flag (customer and seller in same state)
-        CASE
-            WHEN c.customer_state = oi.seller_state THEN TRUE
-            ELSE FALSE
-        END AS is_same_state,
+        coalesce(c.customer_state = oi.seller_state, false) AS is_same_state,
 
         -- Same city flag
-        CASE
-            WHEN c.customer_city = oi.seller_city THEN TRUE
-            ELSE FALSE
-        END AS is_same_city,
+        coalesce(c.customer_city = oi.seller_city, false) AS is_same_city,
 
         -- Delivery status flags
-        CASE WHEN o.order_status = 'delivered' THEN TRUE ELSE FALSE END AS is_delivered,
-        CASE WHEN o.order_status = 'canceled' THEN TRUE ELSE FALSE END AS is_canceled,
-        CASE WHEN o.order_status = 'shipped' THEN TRUE ELSE FALSE END AS is_shipped,
+        coalesce(o.order_status = 'delivered', false) AS is_delivered,
+        coalesce(o.order_status = 'canceled', false) AS is_canceled,
+        coalesce(o.order_status = 'shipped', false) AS is_shipped,
 
         -- On-time delivery flag
         CASE
-            WHEN o.order_status = 'delivered'
-                AND o.order_delivered_customer_date IS NOT NULL
-                AND o.order_estimated_delivery_date IS NOT NULL
+            WHEN
+                o.order_status = 'delivered'
+                AND o.order_delivered_customer_date IS NOT null
+                AND o.order_estimated_delivery_date IS NOT null
                 AND o.order_delivered_customer_date <= o.order_estimated_delivery_date
-            THEN TRUE
+                THEN true
             WHEN o.order_status = 'delivered'
-            THEN FALSE
-            ELSE NULL
+                THEN false
         END AS is_on_time_delivery,
 
         -- Days to deliver (for delivered orders)
         CASE
-            WHEN o.order_status = 'delivered'
-                AND o.order_delivered_customer_date IS NOT NULL
-            THEN DATE_DIFF('day', o.order_purchase_timestamp, o.order_delivered_customer_date)
-            ELSE NULL
+            WHEN
+                o.order_status = 'delivered'
+                AND o.order_delivered_customer_date IS NOT null
+                THEN date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)
         END AS days_to_deliver,
 
         -- Days vs estimated
         CASE
-            WHEN o.order_status = 'delivered'
-                AND o.order_delivered_customer_date IS NOT NULL
-                AND o.order_estimated_delivery_date IS NOT NULL
-            THEN DATE_DIFF('day', o.order_delivered_customer_date, o.order_estimated_delivery_date)
-            ELSE NULL
+            WHEN
+                o.order_status = 'delivered'
+                AND o.order_delivered_customer_date IS NOT null
+                AND o.order_estimated_delivery_date IS NOT null
+                THEN date_diff('day', o.order_delivered_customer_date, o.order_estimated_delivery_date)
         END AS days_vs_estimated,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM order_items_enriched oi
-    LEFT JOIN orders o ON oi.order_id = o.order_id
-    LEFT JOIN customers c ON o.customer_id = c.customer_id
+    FROM order_items_enriched AS oi
+    LEFT JOIN orders AS o ON oi.order_id = o.order_id
+    LEFT JOIN customers AS c ON o.customer_id = c.customer_id
 )
 
 SELECT * FROM order_items_fact
