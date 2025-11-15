@@ -21,14 +21,14 @@ order_items AS (
 product_sales_metrics AS (
     SELECT
         product_id,
-        COUNT(DISTINCT order_id) AS total_orders,
-        COUNT(*) AS total_items_sold,
-        SUM(price) AS total_revenue,
-        AVG(price) AS avg_price,
-        MIN(price) AS min_price,
-        MAX(price) AS max_price,
-        SUM(freight_value) AS total_freight,
-        AVG(freight_value) AS avg_freight
+        count(DISTINCT order_id) AS total_orders,
+        count(*) AS total_items_sold,
+        sum(price) AS total_revenue,
+        avg(price) AS avg_price,
+        min(price) AS min_price,
+        max(price) AS max_price,
+        sum(freight_value) AS total_freight,
+        avg(freight_value) AS avg_freight
     FROM order_items
     GROUP BY product_id
 ),
@@ -66,7 +66,7 @@ product_dimension AS (
 
         -- Size category based on volume
         CASE
-            WHEN p.product_volume_cm3 IS NULL THEN 'Unknown'
+            WHEN p.product_volume_cm3 IS null THEN 'Unknown'
             WHEN p.product_volume_cm3 < 1000 THEN 'Extra Small'
             WHEN p.product_volume_cm3 < 10000 THEN 'Small'
             WHEN p.product_volume_cm3 < 50000 THEN 'Medium'
@@ -76,7 +76,7 @@ product_dimension AS (
 
         -- Weight category
         CASE
-            WHEN p.product_weight_g IS NULL THEN 'Unknown'
+            WHEN p.product_weight_g IS null THEN 'Unknown'
             WHEN p.product_weight_g < 500 THEN 'Light'
             WHEN p.product_weight_g < 2000 THEN 'Medium'
             WHEN p.product_weight_g < 5000 THEN 'Heavy'
@@ -84,13 +84,13 @@ product_dimension AS (
         END AS product_weight_category,
 
         -- Sales metrics
-        COALESCE(psm.total_orders, 0) AS total_orders,
-        COALESCE(psm.total_items_sold, 0) AS total_items_sold,
-        COALESCE(psm.total_revenue, 0) AS total_revenue,
+        coalesce(psm.total_orders, 0) AS total_orders,
+        coalesce(psm.total_items_sold, 0) AS total_items_sold,
+        coalesce(psm.total_revenue, 0) AS total_revenue,
         psm.avg_price,
         psm.min_price,
         psm.max_price,
-        COALESCE(psm.total_freight, 0) AS total_freight,
+        coalesce(psm.total_freight, 0) AS total_freight,
         psm.avg_freight,
 
         -- Product performance tier
@@ -103,11 +103,11 @@ product_dimension AS (
         END AS product_performance_tier,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM products p
-    LEFT JOIN category_translation ct ON p.product_category_name = ct.product_category_name
-    LEFT JOIN product_sales_metrics psm ON p.product_id = psm.product_id
+    FROM products AS p
+    LEFT JOIN category_translation AS ct ON p.product_category_name = ct.product_category_name
+    LEFT JOIN product_sales_metrics AS psm ON p.product_id = psm.product_id
 )
 
 SELECT * FROM product_dimension

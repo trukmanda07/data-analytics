@@ -6,7 +6,7 @@
 }}
 
 WITH source AS (
-    SELECT * FROM read_csv('{{ var("csv_source_path") }}/product_category_name_translation.csv', header=true, auto_detect=true)
+    SELECT * FROM read_csv('{{ var("csv_source_path") }}/product_category_name_translation.csv', header = true, auto_detect = true)
 ),
 
 cleaned AS (
@@ -18,10 +18,10 @@ cleaned AS (
         product_category_name_english,
 
         -- Clean English name for display (replace underscores with spaces)
-        REPLACE(product_category_name_english, '_', ' ') AS category_display_name
+        replace(product_category_name_english, '_', ' ') AS category_display_name
 
     FROM source
-    WHERE product_category_name IS NOT NULL
+    WHERE product_category_name IS NOT null
 )
 
 SELECT * FROM cleaned

@@ -6,7 +6,7 @@
 }}
 
 WITH source AS (
-    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_customers_dataset.csv', header=true, auto_detect=true)
+    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_customers_dataset.csv', header = true, auto_detect = true)
 ),
 
 cleaned AS (
@@ -23,10 +23,10 @@ cleaned AS (
         customer_state,
 
         -- Standardize state abbreviation (uppercase, trim)
-        UPPER(TRIM(customer_state)) AS customer_state_clean
+        upper(trim(customer_state)) AS customer_state_clean
 
     FROM source
-    WHERE customer_id IS NOT NULL
+    WHERE customer_id IS NOT null
 )
 
 SELECT * FROM cleaned

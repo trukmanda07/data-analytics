@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: mart_seller_scorecard
+    description: "Seller performance scorecard with ratings and sales metrics"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "total_sellers >= 0"
+    columns:
+      - name: seller_key
+        description: "Surrogate key for seller dimension"
+        tests:
+          - unique
+          - not_null

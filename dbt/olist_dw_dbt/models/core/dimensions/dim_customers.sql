@@ -17,12 +17,12 @@ orders AS (
 customer_metrics AS (
     SELECT
         customer_id,
-        COUNT(DISTINCT order_id) AS total_orders,
-        MIN(order_purchase_timestamp) AS first_order_date,
-        MAX(order_purchase_timestamp) AS last_order_date,
-        AVG(review_score) AS avg_review_score,
-        COUNT(DISTINCT CASE WHEN order_status = 'delivered' THEN order_id END) AS delivered_orders,
-        COUNT(DISTINCT CASE WHEN order_status = 'canceled' THEN order_id END) AS canceled_orders
+        count(DISTINCT order_id) AS total_orders,
+        min(order_purchase_timestamp) AS first_order_date,
+        max(order_purchase_timestamp) AS last_order_date,
+        avg(review_score) AS avg_review_score,
+        count(DISTINCT CASE WHEN order_status = 'delivered' THEN order_id END) AS delivered_orders,
+        count(DISTINCT CASE WHEN order_status = 'canceled' THEN order_id END) AS canceled_orders
     FROM orders
     GROUP BY customer_id
 ),
@@ -40,12 +40,12 @@ customer_dimension AS (
         c.customer_state_clean,
 
         -- Customer metrics
-        COALESCE(cm.total_orders, 0) AS lifetime_orders,
+        coalesce(cm.total_orders, 0) AS lifetime_orders,
         cm.first_order_date,
         cm.last_order_date,
         cm.avg_review_score,
-        COALESCE(cm.delivered_orders, 0) AS delivered_orders,
-        COALESCE(cm.canceled_orders, 0) AS canceled_orders,
+        coalesce(cm.delivered_orders, 0) AS delivered_orders,
+        coalesce(cm.canceled_orders, 0) AS canceled_orders,
 
         -- Customer segmentation
         CASE
@@ -57,16 +57,15 @@ customer_dimension AS (
 
         -- Recency (days since last order)
         CASE
-            WHEN cm.last_order_date IS NOT NULL
-            THEN DATE_DIFF('day', cm.last_order_date, CURRENT_DATE)
-            ELSE NULL
+            WHEN cm.last_order_date IS NOT null
+                THEN date_diff('day', cm.last_order_date, current_date)
         END AS days_since_last_order,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM customers c
-    LEFT JOIN customer_metrics cm ON c.customer_id = cm.customer_id
+    FROM customers AS c
+    LEFT JOIN customer_metrics AS cm ON c.customer_id = cm.customer_id
 )
 
 SELECT * FROM customer_dimension
