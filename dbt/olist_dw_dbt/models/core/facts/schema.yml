@@ -383,3 +383,12 @@ models:
         tests:
           - accepted_values:
               values: ['No Answer', 'Same/Next Day', 'Within Week', 'Within Month', 'After Month']
+
+  - name: fct_orders
+    description: "Order fact table with aggregated metrics and status flags"
+    columns:
+      - name: order_id
+        description: "Primary key - unique order identifier"
+        tests:
+          - not_null
+          - unique

@@ -1,0 +1,8 @@
+version: 2
+
+models:
+  - name: mart_executive_dashboard
+    description: "Executive dashboard with high-level business metrics and KPIs"
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "total_revenue >= 0"

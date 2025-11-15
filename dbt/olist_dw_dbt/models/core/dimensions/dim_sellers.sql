@@ -25,47 +25,47 @@ reviews AS (
 seller_sales_metrics AS (
     SELECT
         oi.seller_id,
-        COUNT(DISTINCT oi.order_id) AS total_orders,
-        COUNT(*) AS total_items_sold,
-        SUM(oi.price) AS total_revenue,
-        AVG(oi.price) AS avg_item_price,
-        SUM(oi.freight_value) AS total_freight,
-        AVG(oi.freight_value) AS avg_freight,
-        MIN(o.order_purchase_timestamp) AS first_sale_date,
-        MAX(o.order_purchase_timestamp) AS last_sale_date,
-        COUNT(DISTINCT oi.product_id) AS unique_products_sold
-    FROM order_items oi
-    LEFT JOIN orders o ON oi.order_id = o.order_id
+        count(DISTINCT oi.order_id) AS total_orders,
+        count(*) AS total_items_sold,
+        sum(oi.price) AS total_revenue,
+        avg(oi.price) AS avg_item_price,
+        sum(oi.freight_value) AS total_freight,
+        avg(oi.freight_value) AS avg_freight,
+        min(o.order_purchase_timestamp) AS first_sale_date,
+        max(o.order_purchase_timestamp) AS last_sale_date,
+        count(DISTINCT oi.product_id) AS unique_products_sold
+    FROM order_items AS oi
+    LEFT JOIN orders AS o ON oi.order_id = o.order_id
     GROUP BY oi.seller_id
 ),
 
 seller_review_metrics AS (
     SELECT
         oi.seller_id,
-        AVG(r.review_score) AS avg_review_score,
-        COUNT(DISTINCT CASE WHEN r.review_score >= 4 THEN r.review_id END) AS positive_reviews,
-        COUNT(DISTINCT CASE WHEN r.review_score <= 2 THEN r.review_id END) AS negative_reviews,
-        COUNT(DISTINCT r.review_id) AS total_reviews
-    FROM order_items oi
-    LEFT JOIN reviews r ON oi.order_id = r.order_id
-    WHERE r.review_id IS NOT NULL
+        avg(r.review_score) AS avg_review_score,
+        count(DISTINCT CASE WHEN r.review_score >= 4 THEN r.review_id END) AS positive_reviews,
+        count(DISTINCT CASE WHEN r.review_score <= 2 THEN r.review_id END) AS negative_reviews,
+        count(DISTINCT r.review_id) AS total_reviews
+    FROM order_items AS oi
+    LEFT JOIN reviews AS r ON oi.order_id = r.order_id
+    WHERE r.review_id IS NOT null
     GROUP BY oi.seller_id
 ),
 
 seller_delivery_metrics AS (
     SELECT
         oi.seller_id,
-        AVG(DATE_DIFF('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS avg_delivery_days,
-        COUNT(DISTINCT CASE
+        avg(date_diff('day', o.order_purchase_timestamp, o.order_delivered_customer_date)) AS avg_delivery_days,
+        count(DISTINCT CASE
             WHEN o.order_delivered_customer_date <= o.order_estimated_delivery_date
-            THEN o.order_id
+                THEN o.order_id
         END) AS on_time_deliveries,
-        COUNT(DISTINCT CASE
+        count(DISTINCT CASE
             WHEN o.order_status = 'delivered'
-            THEN o.order_id
+                THEN o.order_id
         END) AS total_delivered_orders
-    FROM order_items oi
-    LEFT JOIN orders o ON oi.order_id = o.order_id
+    FROM order_items AS oi
+    LEFT JOIN orders AS o ON oi.order_id = o.order_id
     WHERE o.order_status IN ('delivered', 'shipped')
     GROUP BY oi.seller_id
 ),
@@ -82,46 +82,43 @@ seller_dimension AS (
         s.seller_state_clean,
 
         -- Sales metrics
-        COALESCE(ssm.total_orders, 0) AS total_orders,
-        COALESCE(ssm.total_items_sold, 0) AS total_items_sold,
-        COALESCE(ssm.total_revenue, 0) AS total_revenue,
+        coalesce(ssm.total_orders, 0) AS total_orders,
+        coalesce(ssm.total_items_sold, 0) AS total_items_sold,
+        coalesce(ssm.total_revenue, 0) AS total_revenue,
         ssm.avg_item_price,
-        COALESCE(ssm.total_freight, 0) AS total_freight,
+        coalesce(ssm.total_freight, 0) AS total_freight,
         ssm.avg_freight,
         ssm.first_sale_date,
         ssm.last_sale_date,
-        COALESCE(ssm.unique_products_sold, 0) AS unique_products_sold,
+        coalesce(ssm.unique_products_sold, 0) AS unique_products_sold,
 
         -- Review metrics
         srm.avg_review_score,
-        COALESCE(srm.positive_reviews, 0) AS positive_reviews,
-        COALESCE(srm.negative_reviews, 0) AS negative_reviews,
-        COALESCE(srm.total_reviews, 0) AS total_reviews,
+        coalesce(srm.positive_reviews, 0) AS positive_reviews,
+        coalesce(srm.negative_reviews, 0) AS negative_reviews,
+        coalesce(srm.total_reviews, 0) AS total_reviews,
 
         -- Review performance
         CASE
             WHEN srm.total_reviews > 0
-            THEN CAST(srm.positive_reviews AS DECIMAL) / srm.total_reviews * 100
-            ELSE NULL
+                THEN cast(srm.positive_reviews AS DECIMAL) / srm.total_reviews * 100
         END AS positive_review_rate,
 
         -- Delivery metrics
         sdm.avg_delivery_days,
-        COALESCE(sdm.on_time_deliveries, 0) AS on_time_deliveries,
-        COALESCE(sdm.total_delivered_orders, 0) AS total_delivered_orders,
+        coalesce(sdm.on_time_deliveries, 0) AS on_time_deliveries,
+        coalesce(sdm.total_delivered_orders, 0) AS total_delivered_orders,
 
         -- On-time delivery rate
         CASE
             WHEN sdm.total_delivered_orders > 0
-            THEN CAST(sdm.on_time_deliveries AS DECIMAL) / sdm.total_delivered_orders * 100
-            ELSE NULL
+                THEN cast(sdm.on_time_deliveries AS DECIMAL) / sdm.total_delivered_orders * 100
         END AS on_time_delivery_rate,
 
         -- Days active
         CASE
-            WHEN ssm.first_sale_date IS NOT NULL AND ssm.last_sale_date IS NOT NULL
-            THEN DATE_DIFF('day', ssm.first_sale_date, ssm.last_sale_date)
-            ELSE NULL
+            WHEN ssm.first_sale_date IS NOT null AND ssm.last_sale_date IS NOT null
+                THEN date_diff('day', ssm.first_sale_date, ssm.last_sale_date)
         END AS days_active,
 
         -- Seller performance tier (based on revenue and reviews)
@@ -143,12 +140,12 @@ seller_dimension AS (
         END AS seller_size_tier,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM sellers s
-    LEFT JOIN seller_sales_metrics ssm ON s.seller_id = ssm.seller_id
-    LEFT JOIN seller_review_metrics srm ON s.seller_id = srm.seller_id
-    LEFT JOIN seller_delivery_metrics sdm ON s.seller_id = sdm.seller_id
+    FROM sellers AS s
+    LEFT JOIN seller_sales_metrics AS ssm ON s.seller_id = ssm.seller_id
+    LEFT JOIN seller_review_metrics AS srm ON s.seller_id = srm.seller_id
+    LEFT JOIN seller_delivery_metrics AS sdm ON s.seller_id = sdm.seller_id
 )
 
 SELECT * FROM seller_dimension
