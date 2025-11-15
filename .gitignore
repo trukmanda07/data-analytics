@@ -41,3 +41,6 @@ data/
 .DS_Store
 Thumbs.db
 sys
+
+# Local documentation and notes
+.local_docs/
