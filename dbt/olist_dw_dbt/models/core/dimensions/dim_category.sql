@@ -22,26 +22,26 @@ order_items AS (
 category_product_counts AS (
     SELECT
         product_category_name,
-        COUNT(DISTINCT product_id) AS total_products
+        count(DISTINCT product_id) AS total_products
     FROM products
-    WHERE product_category_name IS NOT NULL
+    WHERE product_category_name IS NOT null
     GROUP BY product_category_name
 ),
 
 category_sales_metrics AS (
     SELECT
         p.product_category_name,
-        COUNT(DISTINCT oi.order_id) AS total_orders,
-        COUNT(*) AS total_items_sold,
-        SUM(oi.price) AS total_revenue,
-        AVG(oi.price) AS avg_item_price,
-        MIN(oi.price) AS min_item_price,
-        MAX(oi.price) AS max_item_price,
-        SUM(oi.freight_value) AS total_freight,
-        AVG(oi.freight_value) AS avg_freight
-    FROM order_items oi
-    INNER JOIN products p ON oi.product_id = p.product_id
-    WHERE p.product_category_name IS NOT NULL
+        count(DISTINCT oi.order_id) AS total_orders,
+        count(*) AS total_items_sold,
+        sum(oi.price) AS total_revenue,
+        avg(oi.price) AS avg_item_price,
+        min(oi.price) AS min_item_price,
+        max(oi.price) AS max_item_price,
+        sum(oi.freight_value) AS total_freight,
+        avg(oi.freight_value) AS avg_freight
+    FROM order_items AS oi
+    INNER JOIN products AS p ON oi.product_id = p.product_id
+    WHERE p.product_category_name IS NOT null
     GROUP BY p.product_category_name
 ),
 
@@ -55,22 +55,22 @@ category_dimension AS (
         ct.category_display_name,
 
         -- Product counts
-        COALESCE(cpc.total_products, 0) AS total_products,
+        coalesce(cpc.total_products, 0) AS total_products,
 
         -- Sales metrics
-        COALESCE(csm.total_orders, 0) AS total_orders,
-        COALESCE(csm.total_items_sold, 0) AS total_items_sold,
-        COALESCE(csm.total_revenue, 0) AS total_revenue,
+        coalesce(csm.total_orders, 0) AS total_orders,
+        coalesce(csm.total_items_sold, 0) AS total_items_sold,
+        coalesce(csm.total_revenue, 0) AS total_revenue,
         csm.avg_item_price,
         csm.min_item_price,
         csm.max_item_price,
-        COALESCE(csm.total_freight, 0) AS total_freight,
+        coalesce(csm.total_freight, 0) AS total_freight,
         csm.avg_freight,
 
         -- Revenue per product
         CASE
             WHEN cpc.total_products > 0
-            THEN COALESCE(csm.total_revenue, 0) / cpc.total_products
+                THEN coalesce(csm.total_revenue, 0) / cpc.total_products
             ELSE 0
         END AS revenue_per_product,
 
@@ -95,7 +95,7 @@ category_dimension AS (
 
         -- Price range category
         CASE
-            WHEN csm.avg_item_price IS NULL THEN 'Unknown'
+            WHEN csm.avg_item_price IS null THEN 'Unknown'
             WHEN csm.avg_item_price >= 200 THEN 'Premium'
             WHEN csm.avg_item_price >= 100 THEN 'High'
             WHEN csm.avg_item_price >= 50 THEN 'Medium'
@@ -105,7 +105,7 @@ category_dimension AS (
 
         -- Freight category (shipping cost indicator)
         CASE
-            WHEN csm.avg_freight IS NULL THEN 'Unknown'
+            WHEN csm.avg_freight IS null THEN 'Unknown'
             WHEN csm.avg_freight >= 30 THEN 'High Shipping'
             WHEN csm.avg_freight >= 15 THEN 'Medium Shipping'
             ELSE 'Low Shipping'
@@ -169,11 +169,11 @@ category_dimension AS (
         END AS category_group,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM category_translation ct
-    LEFT JOIN category_product_counts cpc ON ct.product_category_name = cpc.product_category_name
-    LEFT JOIN category_sales_metrics csm ON ct.product_category_name = csm.product_category_name
+    FROM category_translation AS ct
+    LEFT JOIN category_product_counts AS cpc ON ct.product_category_name = cpc.product_category_name
+    LEFT JOIN category_sales_metrics AS csm ON ct.product_category_name = csm.product_category_name
 )
 
 SELECT * FROM category_dimension

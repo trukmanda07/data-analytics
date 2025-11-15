@@ -26,11 +26,11 @@ reviews AS (
 seller_products AS (
     SELECT
         seller_id,
-        COUNT(DISTINCT product_id) AS unique_products,
-        COUNT(DISTINCT product_category_name_english) AS unique_categories,
-        MODE() WITHIN GROUP (ORDER BY product_category_name_english) AS top_category
+        count(DISTINCT product_id) AS unique_products,
+        count(DISTINCT product_category_name_english) AS unique_categories,
+        mode() WITHIN GROUP (ORDER BY product_category_name_english) AS top_category
     FROM order_items
-    WHERE product_category_name_english IS NOT NULL
+    WHERE product_category_name_english IS NOT null
     GROUP BY seller_id
 ),
 
@@ -38,12 +38,12 @@ seller_products AS (
 seller_geography AS (
     SELECT
         seller_id,
-        COUNT(DISTINCT customer_zip_code_prefix) AS unique_customer_locations,
-        COUNT(DISTINCT customer_state) AS unique_customer_states,
-        MODE() WITHIN GROUP (ORDER BY customer_state) AS top_customer_state,
-        COUNT(DISTINCT CASE WHEN is_same_state THEN order_id END) AS same_state_orders,
-        COUNT(DISTINCT CASE WHEN is_same_city THEN order_id END) AS same_city_orders,
-        COUNT(DISTINCT order_id) AS total_orders
+        count(DISTINCT customer_zip_code_prefix) AS unique_customer_locations,
+        count(DISTINCT customer_state) AS unique_customer_states,
+        mode() WITHIN GROUP (ORDER BY customer_state) AS top_customer_state,
+        count(DISTINCT CASE WHEN is_same_state THEN order_id END) AS same_state_orders,
+        count(DISTINCT CASE WHEN is_same_city THEN order_id END) AS same_city_orders,
+        count(DISTINCT order_id) AS total_orders
     FROM order_items
     GROUP BY seller_id
 ),
@@ -52,12 +52,12 @@ seller_geography AS (
 seller_pricing AS (
     SELECT
         seller_id,
-        AVG(item_price) AS avg_product_price,
-        MIN(item_price) AS min_product_price,
-        MAX(item_price) AS max_product_price,
-        STDDEV(item_price) AS price_stddev,
-        AVG(freight_value) AS avg_freight,
-        AVG(freight_percentage) AS avg_freight_percentage
+        avg(item_price) AS avg_product_price,
+        min(item_price) AS min_product_price,
+        max(item_price) AS max_product_price,
+        stddev(item_price) AS price_stddev,
+        avg(freight_value) AS avg_freight,
+        avg(freight_percentage) AS avg_freight_percentage
     FROM order_items
     GROUP BY seller_id
 ),
@@ -66,27 +66,36 @@ seller_pricing AS (
 seller_volume AS (
     SELECT
         seller_id,
-        MIN(order_purchase_timestamp) AS first_sale_date,
-        MAX(order_purchase_timestamp) AS last_sale_date,
-        COUNT(DISTINCT DATE_TRUNC('month', order_purchase_timestamp)) AS active_months,
+        min(order_purchase_timestamp) AS first_sale_date,
+        max(order_purchase_timestamp) AS last_sale_date,
+        count(DISTINCT date_trunc('month', order_purchase_timestamp)) AS active_months,
 
         -- Recent activity (last 30, 90, 180 days from max date)
-        COUNT(DISTINCT CASE
-            WHEN DATE_DIFF('day', order_purchase_timestamp,
-                (SELECT MAX(order_purchase_timestamp) FROM order_items)) <= 30
-            THEN order_id
+        count(DISTINCT CASE
+            WHEN
+                date_diff(
+                    'day', order_purchase_timestamp,
+                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                ) <= 30
+                THEN order_id
         END) AS orders_last_30_days,
 
-        COUNT(DISTINCT CASE
-            WHEN DATE_DIFF('day', order_purchase_timestamp,
-                (SELECT MAX(order_purchase_timestamp) FROM order_items)) <= 90
-            THEN order_id
+        count(DISTINCT CASE
+            WHEN
+                date_diff(
+                    'day', order_purchase_timestamp,
+                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                ) <= 90
+                THEN order_id
         END) AS orders_last_90_days,
 
-        COUNT(DISTINCT CASE
-            WHEN DATE_DIFF('day', order_purchase_timestamp,
-                (SELECT MAX(order_purchase_timestamp) FROM order_items)) <= 180
-            THEN order_id
+        count(DISTINCT CASE
+            WHEN
+                date_diff(
+                    'day', order_purchase_timestamp,
+                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                ) <= 180
+                THEN order_id
         END) AS orders_last_180_days
 
     FROM order_items
@@ -125,14 +134,14 @@ seller_scorecard AS (
         s.days_active,
 
         -- Volume metrics over time
-        COALESCE(sv.active_months, 0) AS active_months,
-        COALESCE(sv.orders_last_30_days, 0) AS orders_last_30_days,
-        COALESCE(sv.orders_last_90_days, 0) AS orders_last_90_days,
-        COALESCE(sv.orders_last_180_days, 0) AS orders_last_180_days,
+        coalesce(sv.active_months, 0) AS active_months,
+        coalesce(sv.orders_last_30_days, 0) AS orders_last_30_days,
+        coalesce(sv.orders_last_90_days, 0) AS orders_last_90_days,
+        coalesce(sv.orders_last_180_days, 0) AS orders_last_180_days,
 
         -- Product diversity
         s.unique_products_sold,
-        COALESCE(sp.unique_categories, 0) AS unique_categories,
+        coalesce(sp.unique_categories, 0) AS unique_categories,
         sp.top_category,
 
         -- Price metrics
@@ -143,17 +152,16 @@ seller_scorecard AS (
         spr.avg_freight_percentage,
 
         -- Geographic reach
-        COALESCE(sg.unique_customer_locations, 0) AS unique_customer_locations,
-        COALESCE(sg.unique_customer_states, 0) AS unique_customer_states,
+        coalesce(sg.unique_customer_locations, 0) AS unique_customer_locations,
+        coalesce(sg.unique_customer_states, 0) AS unique_customer_states,
         sg.top_customer_state,
 
         -- Local vs distant sales
-        COALESCE(sg.same_state_orders, 0) AS same_state_orders,
-        COALESCE(sg.same_city_orders, 0) AS same_city_orders,
+        coalesce(sg.same_state_orders, 0) AS same_state_orders,
+        coalesce(sg.same_city_orders, 0) AS same_city_orders,
         CASE
             WHEN sg.total_orders > 0
-            THEN CAST(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100
-            ELSE NULL
+                THEN cast(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100
         END AS same_state_order_rate,
 
         -- Review metrics (from dimension)
@@ -172,26 +180,22 @@ seller_scorecard AS (
         -- Revenue efficiency metrics
         CASE
             WHEN s.total_items_sold > 0
-            THEN s.total_revenue / s.total_items_sold
-            ELSE NULL
+                THEN s.total_revenue / s.total_items_sold
         END AS revenue_per_item,
 
         CASE
             WHEN s.total_orders > 0
-            THEN s.total_revenue / s.total_orders
-            ELSE NULL
+                THEN s.total_revenue / s.total_orders
         END AS revenue_per_order,
 
         CASE
             WHEN s.days_active > 0
-            THEN s.total_revenue / s.days_active
-            ELSE NULL
+                THEN s.total_revenue / s.days_active
         END AS revenue_per_day_active,
 
         CASE
             WHEN sv.active_months > 0
-            THEN s.total_revenue / sv.active_months
-            ELSE NULL
+                THEN s.total_revenue / sv.active_months
         END AS revenue_per_month,
 
         -- Growth indicators
@@ -205,13 +209,12 @@ seller_scorecard AS (
 
         -- Performance scores (0-100 scale)
         -- Revenue score (top 10% = 100, scales down)
-        PERCENT_RANK() OVER (ORDER BY s.total_revenue) * 100 AS revenue_percentile,
+        percent_rank() OVER (ORDER BY s.total_revenue) * 100 AS revenue_percentile,
 
         -- Review score (direct mapping: 5 stars = 100)
         CASE
-            WHEN s.avg_review_score IS NOT NULL
-            THEN s.avg_review_score * 20
-            ELSE NULL
+            WHEN s.avg_review_score IS NOT null
+                THEN s.avg_review_score * 20
         END AS review_score_100,
 
         -- Delivery score (100% on time = 100)
@@ -219,31 +222,34 @@ seller_scorecard AS (
 
         -- Combined performance score (weighted average)
         CASE
-            WHEN s.avg_review_score IS NOT NULL AND s.on_time_delivery_rate IS NOT NULL
-            THEN (
-                (PERCENT_RANK() OVER (ORDER BY s.total_revenue) * 100 * 0.4) +  -- 40% revenue
-                (s.avg_review_score * 20 * 0.3) +                                 -- 30% reviews
-                (s.on_time_delivery_rate * 0.3)                                  -- 30% delivery
-            )
-            ELSE NULL
+            WHEN s.avg_review_score IS NOT null AND s.on_time_delivery_rate IS NOT null
+                THEN (
+                    (percent_rank() OVER (ORDER BY s.total_revenue) * 100 * 0.4)  -- 40% revenue
+                    + (s.avg_review_score * 20 * 0.3)                                 -- 30% reviews
+                    + (s.on_time_delivery_rate * 0.3)                                  -- 30% delivery
+                )
         END AS overall_performance_score,
 
         -- Seller health indicators
         CASE
-            WHEN s.avg_review_score >= 4.5
+            WHEN
+                s.avg_review_score >= 4.5
                 AND s.on_time_delivery_rate >= 90
                 AND sv.orders_last_90_days > 0
-            THEN 'Excellent'
-            WHEN s.avg_review_score >= 4.0
+                THEN 'Excellent'
+            WHEN
+                s.avg_review_score >= 4.0
                 AND s.on_time_delivery_rate >= 80
                 AND sv.orders_last_90_days > 0
-            THEN 'Good'
-            WHEN s.avg_review_score >= 3.5
+                THEN 'Good'
+            WHEN
+                s.avg_review_score >= 3.5
                 AND s.on_time_delivery_rate >= 70
-            THEN 'Average'
-            WHEN s.avg_review_score < 3.5
+                THEN 'Average'
+            WHEN
+                s.avg_review_score < 3.5
                 OR s.on_time_delivery_rate < 70
-            THEN 'Needs Improvement'
+                THEN 'Needs Improvement'
             ELSE 'New/Unknown'
         END AS seller_health,
 
@@ -257,21 +263,21 @@ seller_scorecard AS (
 
         -- Geographic focus
         CASE
-            WHEN sg.total_orders > 0 AND (CAST(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100) >= 80 THEN 'Local Focused'
-            WHEN sg.total_orders > 0 AND (CAST(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100) >= 50 THEN 'Regional'
+            WHEN sg.total_orders > 0 AND (cast(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100) >= 80 THEN 'Local Focused'
+            WHEN sg.total_orders > 0 AND (cast(sg.same_state_orders AS DECIMAL) / sg.total_orders * 100) >= 50 THEN 'Regional'
             WHEN sg.unique_customer_states >= 15 THEN 'National'
             ELSE 'Multi-Regional'
         END AS geographic_focus,
 
         -- Current timestamp
-        CURRENT_TIMESTAMP AS dbt_updated_at
+        current_timestamp AS dbt_updated_at
 
-    FROM sellers s
-    LEFT JOIN geography g ON s.seller_zip_code_prefix = g.zip_code_prefix
-    LEFT JOIN seller_products sp ON s.seller_id = sp.seller_id
-    LEFT JOIN seller_geography sg ON s.seller_id = sg.seller_id
-    LEFT JOIN seller_pricing spr ON s.seller_id = spr.seller_id
-    LEFT JOIN seller_volume sv ON s.seller_id = sv.seller_id
+    FROM sellers AS s
+    LEFT JOIN geography AS g ON s.seller_zip_code_prefix = g.zip_code_prefix
+    LEFT JOIN seller_products AS sp ON s.seller_id = sp.seller_id
+    LEFT JOIN seller_geography AS sg ON s.seller_id = sg.seller_id
+    LEFT JOIN seller_pricing AS spr ON s.seller_id = spr.seller_id
+    LEFT JOIN seller_volume AS sv ON s.seller_id = sv.seller_id
 )
 
 SELECT * FROM seller_scorecard

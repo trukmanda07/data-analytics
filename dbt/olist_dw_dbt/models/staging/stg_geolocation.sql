@@ -6,20 +6,20 @@
 }}
 
 WITH source AS (
-    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_geolocation_dataset.csv', header=true, auto_detect=true)
+    SELECT * FROM read_csv('{{ var("csv_source_path") }}/olist_geolocation_dataset.csv', header = true, auto_detect = true)
 ),
 
 -- Remove duplicates by taking average coordinates per zip code
 deduplicated AS (
     SELECT
         geolocation_zip_code_prefix,
-        AVG(CAST(geolocation_lat AS DECIMAL(10,6))) AS geolocation_lat,
-        AVG(CAST(geolocation_lng AS DECIMAL(10,6))) AS geolocation_lng,
+        avg(cast(geolocation_lat AS DECIMAL(10, 6))) AS geolocation_lat,
+        avg(cast(geolocation_lng AS DECIMAL(10, 6))) AS geolocation_lng,
         -- Take the first city/state for this zip (they should be consistent)
-        MIN(geolocation_city) AS geolocation_city,
-        MIN(geolocation_state) AS geolocation_state
+        min(geolocation_city) AS geolocation_city,
+        min(geolocation_state) AS geolocation_state
     FROM source
-    WHERE geolocation_zip_code_prefix IS NOT NULL
+    WHERE geolocation_zip_code_prefix IS NOT null
     GROUP BY geolocation_zip_code_prefix
 ),
 
@@ -37,7 +37,7 @@ cleaned AS (
         geolocation_state,
 
         -- Standardize state abbreviation
-        UPPER(TRIM(geolocation_state)) AS geolocation_state_clean
+        upper(trim(geolocation_state)) AS geolocation_state_clean
 
     FROM deduplicated
 )

@@ -26,8 +26,8 @@ orders_with_customers AS (
         c.customer_city,
         c.customer_state,
         c.customer_state_clean
-    FROM orders o
-    LEFT JOIN customers c ON o.customer_id = c.customer_id
+    FROM orders AS o
+    LEFT JOIN customers AS c ON o.customer_id = c.customer_id
 ),
 
 orders_enriched AS (
@@ -38,8 +38,8 @@ orders_enriched AS (
         r.review_sentiment,
         r.has_comment,
         r.review_creation_date
-    FROM orders_with_customers oc
-    LEFT JOIN reviews r ON oc.order_id = r.order_id
+    FROM orders_with_customers AS oc
+    LEFT JOIN reviews AS r ON oc.order_id = r.order_id
 )
 
 SELECT * FROM orders_enriched
