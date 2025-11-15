@@ -5,15 +5,12 @@ dialect = duckdb
 max_line_length = 100
 indent_unit = space
 
-# Exclude paths
-exclude_rules = L034,L031,L016,RF04,RF02,ST03,AL04
+# Exclude rules
+exclude_rules = L034,L031,L016,RF04
 # L034: Allow wildcard in SELECT statements (useful for SELECT *)
 # L031: Allow table aliases that don't use AS keyword
 # L016: Allow long lines in some cases (e.g., long column lists)
 # RF04: Allow keywords as identifiers (e.g., year, month, quarter in dim_date)
-# RF02: Allow unqualified references (will address in refactoring phase)
-# ST03: Allow unused CTEs (will clean up in refactoring phase)
-# AL04: Allow duplicate table aliases (will fix in refactoring phase)
 
 [sqlfluff:templater:dbt]
 project_dir = .

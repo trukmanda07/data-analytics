@@ -23,23 +23,23 @@ repos:
   - repo: https://github.com/dbt-checkpoint/dbt-checkpoint
     rev: v2.0.5
     hooks:
-      # Check model has description (will enable in Week 2 after all docs complete)
-      # - id: check-model-has-description
-      #   name: Check model has description
-      #   files: ^dbt/olist_dw_dbt/
-      #   args: ["--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--"]
+      # Check model has description
+      - id: check-model-has-description
+        name: Check model has description
+        files: ^dbt/olist_dw_dbt/
+        args: ["--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--"]
 
-      # Check model has at least one test (will enable in Week 2 with dbt-expectations)
-      # - id: check-model-has-tests
-      #   name: Check model has tests
-      #   files: ^dbt/olist_dw_dbt/
-      #   args: ["--test-cnt", "1", "--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--"]
+      # Check model has at least one test
+      - id: check-model-has-tests
+        name: Check model has tests
+        files: ^dbt/olist_dw_dbt/
+        args: ["--test-cnt", "1", "--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--"]
 
-      # Check column names are lowercase with underscores (will enable in Week 2)
-      # - id: check-column-name-contract
-      #   name: Check column names are lowercase
-      #   files: ^dbt/olist_dw_dbt/
-      #   args: ["--pattern", "^[a-z_][a-z0-9_]*$", "--dtypes", "text", "integer", "bigint", "double", "timestamp", "date", "boolean", "varchar", "--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--catalog", "dbt/olist_dw_dbt/target/catalog.json", "--"]
+      # Check column names are lowercase with underscores
+      - id: check-column-name-contract
+        name: Check column names are lowercase
+        files: ^dbt/olist_dw_dbt/
+        args: ["--pattern", "^[a-z_][a-z0-9_]*$", "--dtypes", "text", "integer", "bigint", "double", "timestamp", "date", "boolean", "varchar", "--manifest", "dbt/olist_dw_dbt/target/manifest.json", "--catalog", "dbt/olist_dw_dbt/target/catalog.json", "--"]
 
       # Check model naming conventions (stg_, int_, dim_, fct_, mart_)
       - id: check-model-name-contract
