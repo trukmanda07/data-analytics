@@ -6,7 +6,7 @@ dbt-duckdb>=1.10.0
 dbt-duckdb[sources]>=1.10.0
 
 # Fix protobuf compatibility with dbt
-protobuf>=3.20,<5.0
+protobuf>=5.0,<7.0
 
 # dbt Column Lineage
 dbt-colibri>=0.2.7
@@ -37,6 +37,9 @@ seaborn>=0.13.0
 numpy>=1.24.0
 python-dotenv>=1.0.0
 pyyaml==6.0.1
+pyarrow>=12.0.0
+requests>=2.31.0
+tqdm>=4.65.0
 
 # Optional: Additional Analysis Tools
 scikit-learn>=1.3.0
