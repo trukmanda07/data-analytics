@@ -6,3 +6,11 @@ models:
     tests:
       - dbt_utils.expression_is_true:
           expression: "total_revenue >= 0"
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1
+          max_value: 50
+      - dbt_expectations.expect_table_aggregation_to_equal_other_table:
+          expression: SUM(total_revenue)
+          compare_model: ref('fct_order_items')
+          compare_expression: SUM(total_item_value)
+          tolerance: 0.01

@@ -1,0 +1,20 @@
+version: 2
+
+tests:
+  - name: data_quality_tests
+    description: |
+      Critical data quality test that validates all orders have an associated customer_id.
+      This ensures referential integrity between orders and customers tables.
+
+      Test fails if any orders are found with NULL customer_id values, which would indicate:
+      - Data loading issues
+      - Missing customer records
+      - Referential integrity violations
+
+      Severity: ERROR (build will fail if test fails)
+    config:
+      severity: error
+      tags:
+        - data_quality
+        - critical
+        - referential_integrity

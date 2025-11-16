@@ -18,10 +18,6 @@ order_items AS (
     SELECT * FROM {{ ref('fct_order_items') }}
 ),
 
-reviews AS (
-    SELECT * FROM {{ ref('fct_reviews') }}
-),
-
 -- Seller product diversity
 seller_products AS (
     SELECT
@@ -65,47 +61,48 @@ seller_pricing AS (
 -- Seller volume metrics over time
 seller_volume AS (
     SELECT
-        seller_id,
-        min(order_purchase_timestamp) AS first_sale_date,
-        max(order_purchase_timestamp) AS last_sale_date,
-        count(DISTINCT date_trunc('month', order_purchase_timestamp)) AS active_months,
+        oi.seller_id,
+        min(oi.order_purchase_timestamp) AS first_sale_date,
+        max(oi.order_purchase_timestamp) AS last_sale_date,
+        count(DISTINCT date_trunc('month', oi.order_purchase_timestamp)) AS active_months,
 
         -- Recent activity (last 30, 90, 180 days from max date)
         count(DISTINCT CASE
             WHEN
                 date_diff(
-                    'day', order_purchase_timestamp,
-                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                    'day', oi.order_purchase_timestamp,
+                    (SELECT max(oi2.order_purchase_timestamp) FROM order_items AS oi2)
                 ) <= 30
-                THEN order_id
+                THEN oi.order_id
         END) AS orders_last_30_days,
 
         count(DISTINCT CASE
             WHEN
                 date_diff(
-                    'day', order_purchase_timestamp,
-                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                    'day', oi.order_purchase_timestamp,
+                    (SELECT max(oi2.order_purchase_timestamp) FROM order_items AS oi2)
                 ) <= 90
-                THEN order_id
+                THEN oi.order_id
         END) AS orders_last_90_days,
 
         count(DISTINCT CASE
             WHEN
                 date_diff(
-                    'day', order_purchase_timestamp,
-                    (SELECT max(order_purchase_timestamp) FROM order_items)
+                    'day', oi.order_purchase_timestamp,
+                    (SELECT max(oi2.order_purchase_timestamp) FROM order_items AS oi2)
                 ) <= 180
-                THEN order_id
+                THEN oi.order_id
         END) AS orders_last_180_days
 
-    FROM order_items
-    GROUP BY seller_id
+    FROM order_items AS oi
+    GROUP BY oi.seller_id
 ),
 
 -- Seller scorecard
 seller_scorecard AS (
     SELECT
         -- Seller identifiers
+        {{ dbt_utils.generate_surrogate_key(['s.seller_id']) }} AS seller_key,
         s.seller_id,
 
         -- Location

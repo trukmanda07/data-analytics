@@ -89,6 +89,7 @@ product_sellers AS (
 product_performance AS (
     SELECT
         -- Product identifiers
+        {{ dbt_utils.generate_surrogate_key(['p.product_id']) }} AS product_key,
         p.product_id,
         p.product_category_name,
         p.product_category_name_english,

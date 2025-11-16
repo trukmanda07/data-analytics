@@ -3,27 +3,47 @@ version: 2
 models:
   - name: stg_orders
     description: "Staging model for orders with cleaned timestamps and calculated delivery metrics"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 200000
     columns:
       - name: order_id
         description: "Unique order identifier"
         tests:
           - not_null
           - unique
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar
       - name: customer_id
         description: "Foreign key to customers"
         tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar
+          - relationships:
+              to: ref('stg_customers')
+              field: customer_id
       - name: order_status
         description: "Current order status"
         tests:
           - accepted_values:
               values: ['delivered', 'shipped', 'canceled', 'unavailable', 'invoiced', 'processing', 'created', 'approved']
+          - dbt_expectations.expect_column_values_to_not_be_null
       - name: order_purchase_timestamp
         description: "Timestamp when order was placed"
         tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: "'2016-01-01'"
+              max_value: "'2019-12-31'"
+              row_condition: "order_purchase_timestamp is not null"
       - name: delivery_performance
         description: "Delivery performance vs estimated date (early/on_time/late)"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['early', 'on_time', 'late']
+              row_condition: "delivery_performance is not null"
 
   - name: stg_customers
     description: "Staging model for customer information and location"
@@ -40,60 +60,127 @@ models:
 
   - name: stg_order_items
     description: "Staging model for order line items with pricing"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 300000
     columns:
       - name: order_id
         description: "Foreign key to orders"
         tests:
           - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
       - name: order_item_id
         description: "Sequential item number within order"
         tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 50
       - name: product_id
         description: "Foreign key to products"
+        tests:
+          - relationships:
+              to: ref('stg_products')
+              field: product_id
       - name: seller_id
         description: "Foreign key to sellers"
+        tests:
+          - relationships:
+              to: ref('stg_sellers')
+              field: seller_id
       - name: price
         description: "Item price"
         tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 10000
+              strictly: false
       - name: freight_value
         description: "Freight cost"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 500
+              strictly: false
+              row_condition: "freight_value is not null"
       - name: total_item_value
         description: "Price + freight"
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 10500
+              strictly: false
 
   - name: stg_payments
     description: "Staging model for payment information"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 300000
     columns:
       - name: order_id
         description: "Foreign key to orders"
         tests:
           - not_null
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
       - name: payment_type
         description: "Payment method used"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['credit_card', 'boleto', 'voucher', 'debit_card', 'not_defined']
+              row_condition: "payment_type is not null"
       - name: payment_value
         description: "Payment amount"
         tests:
           - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 15000
+              strictly: false
 
   - name: stg_reviews
     description: "Staging model for customer reviews"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 200000
     columns:
       - name: review_id
         description: "Unique review identifier"
         tests:
           - not_null
           - unique
+          - dbt_expectations.expect_column_values_to_be_of_type:
+              column_type: varchar
       - name: order_id
         description: "Foreign key to orders"
+        tests:
+          - relationships:
+              to: ref('stg_orders')
+              field: order_id
       - name: review_score
         description: "Rating from 1 to 5"
         tests:
           - not_null
           - accepted_values:
               values: [1, 2, 3, 4, 5]
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 1
+              max_value: 5
+              strictly: false
       - name: review_sentiment
         description: "Derived sentiment (positive/neutral/negative)"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_in_set:
+              value_set: ['positive', 'neutral', 'negative']
+              row_condition: "review_sentiment is not null"
 
   - name: stg_products
     description: "Staging model for product catalog"
@@ -121,6 +208,10 @@ models:
 
   - name: stg_geolocation
     description: "Staging model for Brazilian zip code coordinates (deduplicated)"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 50000
     columns:
       - name: geolocation_zip_code_prefix
         description: "First 5 digits of zip code"
@@ -129,8 +220,20 @@ models:
           - unique
       - name: geolocation_lat
         description: "Average latitude for this zip"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -35
+              max_value: 10
+              strictly: false
+              row_condition: "geolocation_lat is not null"
       - name: geolocation_lng
         description: "Average longitude for this zip"
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -75
+              max_value: -30
+              strictly: false
+              row_condition: "geolocation_lng is not null"
 
   - name: stg_category_translation
     description: "Staging model for category translations"

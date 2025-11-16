@@ -7,6 +7,11 @@ models:
       - dbt_utils.expression_is_true:
           expression: "total_item_value = item_price + freight_value"
           name: fct_order_items_total_value_equals_price_plus_freight
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 50000
+          max_value: 300000
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ['order_id', 'order_item_id']
 
     columns:
       - name: order_id
@@ -141,6 +146,11 @@ models:
       - dbt_utils.expression_is_true:
           expression: "installment_value = payment_value / NULLIF(payment_installments, 0)"
           name: fct_payments_installment_value_calculation
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 50000
+          max_value: 300000
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ['order_id', 'payment_sequential']
 
     columns:
       - name: order_id
@@ -250,6 +260,14 @@ models:
 
   - name: fct_reviews
     description: "Reviews fact table - grain: one row per review"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 50000
+          max_value: 200000
+      - dbt_expectations.expect_column_pair_values_A_to_be_greater_than_B:
+          column_A: review_date_key
+          column_B: order_date_key
+          or_equal: true
     columns:
       - name: review_id
         description: "Primary key - unique review identifier"

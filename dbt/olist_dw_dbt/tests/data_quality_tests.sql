@@ -4,12 +4,22 @@
 -- ============================================================================
 
 -- Test 1: Ensure all orders have a customer_id
--- {{ config(severity='error') }}
+{{ config(
+    severity='error',
+    tags=['data_quality', 'critical']
+) }}
+
+/*
+  description: >
+    Validates that all orders have an associated customer_id.
+    This is a critical referential integrity test.
+*/
+
 SELECT
     order_id,
-    'Missing customer_id' as issue
+    'Missing customer_id' AS issue
 FROM {{ ref('fct_orders') }}
-WHERE customer_id IS NULL;
+WHERE customer_id IS null
 
 -- Test 2: Ensure order values match payment values (within reasonable tolerance)
 -- Uncomment to run:
