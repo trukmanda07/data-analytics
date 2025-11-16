@@ -5,3 +5,6 @@ packages:
     version: 0.10.9
   - package: godatadriven/dbt_date
     version: 0.10.1
+  # Custom monitoring solution instead of dbt_artifacts
+  # - package: brooklyn-data/dbt_artifacts
+  #   version: 2.9.3
