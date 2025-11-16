@@ -4,8 +4,9 @@ models:
   - name: mart_product_performance
     description: "Product performance analytics with sales metrics and rankings"
     tests:
-      - dbt_utils.expression_is_true:
-          expression: "total_products >= 0"
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 10000
+          max_value: 50000
     columns:
       - name: product_key
         description: "Surrogate key for product dimension"

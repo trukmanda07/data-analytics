@@ -30,6 +30,7 @@ customer_metrics AS (
 customer_dimension AS (
     SELECT
         -- Primary key
+        {{ dbt_utils.generate_surrogate_key(['c.customer_id']) }} AS customer_key,
         c.customer_id,
         c.customer_unique_id,
 

@@ -4,8 +4,9 @@ models:
   - name: mart_customer_analytics
     description: Customer analytics mart with aggregated metrics and segmentation
     tests:
-      - dbt_utils.expression_is_true:
-          expression: "total_customers >= 0"
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 50000
+          max_value: 150000
     columns:
       - name: customer_key
         description: Surrogate key for customer dimension

@@ -1,0 +1,84 @@
+# dbt Test Selectors
+# These selectors help organize and run different test suites
+
+selectors:
+  # Run all critical tests (error severity)
+  - name: critical_tests
+    description: "Run only critical tests that must pass"
+    definition:
+      union:
+        - method: test_type
+          value: generic
+        - method: tag
+          value: staging
+        - method: tag
+          value: core
+
+  # Run all data quality tests
+  - name: data_quality
+    description: "Run all data quality tests"
+    definition:
+      method: tag
+      value: data_quality
+
+  # Run staging layer tests only
+  - name: staging_tests
+    description: "Run tests for staging models only"
+    definition:
+      method: tag
+      value: staging
+
+  # Run core layer tests only
+  - name: core_tests
+    description: "Run tests for core models (dimensions and facts)"
+    definition:
+      method: tag
+      value: core
+
+  # Run mart layer tests only
+  - name: mart_tests
+    description: "Run tests for mart models"
+    definition:
+      method: tag
+      value: mart
+
+  # Run dimension tests
+  - name: dimension_tests
+    description: "Run tests for dimension tables"
+    definition:
+      method: tag
+      value: dimension
+
+  # Run fact tests
+  - name: fact_tests
+    description: "Run tests for fact tables"
+    definition:
+      method: tag
+      value: fact
+
+  # Run business logic tests
+  - name: business_logic_tests
+    description: "Run custom business logic validation tests"
+    definition:
+      method: tag
+      value: business_logic
+
+  # Quick smoke tests (for CI/CD)
+  - name: smoke_tests
+    description: "Quick smoke tests for CI/CD pipeline"
+    definition:
+      union:
+        - method: test_type
+          value: generic
+        - method: tag
+          value: staging
+
+  # Full test suite
+  - name: full_suite
+    description: "Run the complete test suite"
+    definition:
+      union:
+        - method: test_type
+          value: generic
+        - method: test_type
+          value: singular

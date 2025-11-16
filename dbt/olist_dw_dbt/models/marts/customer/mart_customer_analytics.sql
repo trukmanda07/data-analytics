@@ -18,10 +18,6 @@ order_items AS (
     SELECT * FROM {{ ref('fct_order_items') }}
 ),
 
-reviews AS (
-    SELECT * FROM {{ ref('fct_reviews') }}
-),
-
 geography AS (
     SELECT * FROM {{ ref('dim_geography') }}
 ),
@@ -119,6 +115,7 @@ rfm_scores AS (
 customer_analytics AS (
     SELECT
         -- Customer identifiers
+        {{ dbt_utils.generate_surrogate_key(['c.customer_id']) }} AS customer_key,
         c.customer_id,
         c.customer_unique_id,
 

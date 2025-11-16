@@ -3,6 +3,14 @@ version: 2
 models:
   - name: dim_category
     description: "Category dimension with sales performance metrics and hierarchical grouping"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 50
+          max_value: 200
+      - dbt_expectations.expect_table_columns_to_match_ordered_list:
+          column_list: ['product_category_name', 'product_category_name_english', 'category_display_name',
+                        'total_products', 'total_orders', 'total_items_sold', 'total_revenue',
+                        'avg_item_price', 'revenue_tier', 'category_size_tier', 'price_tier', 'category_group']
     columns:
       - name: product_category_name
         description: "Primary key - category name in Portuguese"
@@ -85,6 +93,13 @@ models:
 
   - name: dim_date
     description: "Date dimension with calendar attributes, fiscal periods, and Brazilian holidays"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 1000
+          max_value: 2000
+      - dbt_utils.expression_is_true:
+          expression: "date_key = CAST(REPLACE(CAST(date_day AS VARCHAR), '-', '') AS INTEGER)"
+          name: dim_date_key_format_validation
     columns:
       - name: date_key
         description: "Primary key in YYYYMMDD integer format"
@@ -254,6 +269,12 @@ models:
 
   - name: dim_products
     description: "Product dimension with category information and sales performance metrics"
+    tests:
+      - dbt_expectations.expect_table_row_count_to_be_between:
+          min_value: 10000
+          max_value: 50000
+      - dbt_expectations.expect_compound_columns_to_be_unique:
+          column_list: ['product_id']
     columns:
       - name: product_id
         description: "Primary key - unique product identifier"

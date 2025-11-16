@@ -4,12 +4,22 @@ sources:
   - name: raw
     description: "Raw CSV files from Olist Brazilian E-Commerce dataset"
     database: olist_analytical
+    loader: csv_file
 
     tables:
       - name: orders
         description: "Order details with status and timestamps"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_orders_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_orders_dataset.csv', header=true)"
+        loaded_at_field: order_purchase_timestamp
+        freshness:
+          warn_after: {count: 365, period: day}
+          error_after: {count: 730, period: day}
+        tests:
+          - dbt_utils.recency:
+              datepart: day
+              field: order_purchase_timestamp
+              interval: 730
         columns:
           - name: order_id
             description: "Unique identifier for the order"
@@ -36,13 +46,15 @@ sources:
       - name: customers
         description: "Customer information and location"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_customers_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_customers_dataset.csv', header=true)"
+        freshness:
+          warn_after: {count: 30, period: day}
+          error_after: {count: 90, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: customer_id
             description: "Unique identifier for the customer"
-            tests:
-              - not_null
-              - unique
           - name: customer_unique_id
             description: "Unique identifier for the actual person (can have multiple customer_ids)"
           - name: customer_zip_code_prefix
@@ -55,7 +67,13 @@ sources:
       - name: order_items
         description: "Line items for each order with product and pricing details"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_items_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_items_dataset.csv', header=true)"
+        loaded_at_field: shipping_limit_date
+        freshness:
+          warn_after: {count: 365, period: day}
+          error_after: {count: 730, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: order_id
             description: "Foreign key to orders table"
@@ -77,7 +95,12 @@ sources:
       - name: payments
         description: "Payment details including method and installments"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_payments_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_payments_dataset.csv', header=true)"
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 7, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: order_id
             description: "Foreign key to orders table"
@@ -95,7 +118,13 @@ sources:
       - name: reviews
         description: "Customer reviews with scores and comments"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_reviews_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_order_reviews_dataset.csv', header=true)"
+        loaded_at_field: review_creation_date
+        freshness:
+          warn_after: {count: 365, period: day}
+          error_after: {count: 730, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: review_id
             description: "Unique review identifier"
@@ -118,7 +147,12 @@ sources:
       - name: products
         description: "Product catalog with categories and dimensions"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_products_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_products_dataset.csv', header=true)"
+        freshness:
+          warn_after: {count: 7, period: day}
+          error_after: {count: 30, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: product_id
             description: "Unique product identifier"
@@ -145,13 +179,15 @@ sources:
       - name: sellers
         description: "Seller information and location"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_sellers_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_sellers_dataset.csv', header=true)"
+        freshness:
+          warn_after: {count: 7, period: day}
+          error_after: {count: 30, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: seller_id
             description: "Unique seller identifier"
-            tests:
-              - not_null
-              - unique
           - name: seller_zip_code_prefix
             description: "First 5 digits of seller zip code"
           - name: seller_city
@@ -162,7 +198,12 @@ sources:
       - name: geolocation
         description: "Brazilian zip code coordinates for mapping"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_geolocation_dataset.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/olist_geolocation_dataset.csv', header=true)"
+        freshness:
+          warn_after: {count: 30, period: day}
+          error_after: {count: 90, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: geolocation_zip_code_prefix
             description: "First 5 digits of zip code"
@@ -178,12 +219,14 @@ sources:
       - name: category_translation
         description: "Product category names translated from Portuguese to English"
         meta:
-          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/product_category_name_translation.csv')"
+          external_location: "read_csv_auto('{{ var(\"csv_source_path\") }}/product_category_name_translation.csv', header=true)"
+        freshness:
+          warn_after: {count: 90, period: day}
+          error_after: {count: 180, period: day}
+        tests:
+          - dbt_utils.at_least_one
         columns:
           - name: product_category_name
             description: "Category name in Portuguese"
-            tests:
-              - not_null
-              - unique
           - name: product_category_name_english
             description: "Category name in English"

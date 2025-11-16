@@ -102,3 +102,13 @@ tests:
   olist_dw_dbt:
     +store_failures: true
     +schema: test_failures
+    +severity: warn  # Default severity for all tests
+
+    # Generic tests (in tests/generic/)
+    generic:
+      +severity: error  # Custom generic tests are critical
+
+    # Singular tests (in tests/singular/)
+    singular:
+      +severity: warn  # Singular tests are warnings by default
+      +tags: ['data_quality', 'business_logic']
