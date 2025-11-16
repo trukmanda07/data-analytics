@@ -1,0 +1,50 @@
+version: 2
+
+models:
+  - name: dbt_run_history
+    description: Historical record of dbt run invocations
+    tags: ['monitoring', 'meta']
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "total_models >= 0"
+    columns:
+      - name: invocation_id
+        description: Unique identifier for this dbt run
+      - name: run_started_at
+        description: Timestamp when the run started
+      - name: run_completed_at
+        description: Timestamp when the run completed
+      - name: dbt_command
+        description: The dbt command that was executed
+      - name: success
+        description: Whether the run completed successfully
+      - name: total_models
+        description: Number of models executed
+      - name: total_tests
+        description: Number of tests executed
+      - name: total_runtime_seconds
+        description: Total runtime in seconds
+
+  - name: dbt_model_history
+    description: Historical record of individual model executions
+    tags: ['monitoring', 'meta']
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "execution_time_seconds >= 0"
+    columns:
+      - name: invocation_id
+        description: Links to dbt_run_history
+      - name: model_name
+        description: Name of the model
+      - name: schema_name
+        description: Schema where the model is materialized
+      - name: materialization
+        description: Type of materialization (table, view, incremental, etc)
+      - name: status
+        description: Execution status (success, error, skipped)
+      - name: execution_time_seconds
+        description: Time taken to execute the model
+      - name: rows_affected
+        description: Number of rows affected by the model
+      - name: executed_at
+        description: Timestamp of execution

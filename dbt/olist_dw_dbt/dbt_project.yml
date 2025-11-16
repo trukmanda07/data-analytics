@@ -29,6 +29,10 @@ vars:
   start_date: '2016-01-01'
   end_date: '2018-12-31'
 
+  # dbt-artifacts configuration
+  dbt_artifacts_database: olist_analytical
+  dbt_artifacts_schema: core
+
 # Model configurations
 models:
   olist_dw_dbt:
@@ -91,6 +95,13 @@ models:
       geographic:
         +tags: ['mart', 'geographic', 'weekly']
 
+    # dbt-artifacts models
+    dbt_artifacts:
+      +schema: dbt_artifacts
+      +materialized: incremental
+      staging:
+        +materialized: ephemeral
+
 # Seeds configuration
 seeds:
   olist_dw_dbt:
@@ -112,3 +123,7 @@ tests:
     singular:
       +severity: warn  # Singular tests are warnings by default
       +tags: ['data_quality', 'business_logic']
+
+# Hooks
+on-run-end:
+  - "{{ log('✓ dbt run completed. Run: python3 monitoring/log_run_results.py', info=True) }}"
